@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SwitchView: View {
     @ObservedObject var model: SwitchModel
+    var onCommit: () -> Void = {}
 
     private var grid: [GridItem] {
         Array(repeating: GridItem(.flexible(), spacing: Design.tilePadding), count: Design.columns)
@@ -14,12 +15,21 @@ struct SwitchView: View {
                 LazyVGrid(columns: grid, spacing: Design.tilePadding) {
                     ForEach(Array(model.windows.enumerated()), id: \.element.id) { idx, win in
                         Tile(window: win, selected: idx == model.selected)
+                            .onTapGesture {
+                                model.selected = idx
+                                onCommit()
+                            }
                     }
                 }
                 .padding(Design.tilePadding)
             }
         }
         .frame(width: Design.panelWidth, height: Design.panelHeight)
+        .onKeyPress(.tab) { model.advance(); return .handled }
+        .onKeyPress(.leftArrow) { model.back(); return .handled }
+        .onKeyPress(.rightArrow) { model.advance(); return .handled }
+        .onKeyPress(.return) { onCommit(); return .handled }
+        .onKeyPress(.escape) { onCommit(); return .handled }
     }
 }
 
