@@ -9,6 +9,6 @@ WIP.
 ## Hotkeys
 
 - `⌘-Tab` cycle all windows
-- `⌥-`` cycle within current app
+- `⌥-`` cycle within current app's windows
 - type to filter inline
 - `esc` cancel
