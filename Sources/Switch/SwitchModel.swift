@@ -24,7 +24,13 @@ final class SwitchModel: ObservableObject {
                 $0.title.lowercased().contains(q) || $0.ownerName.lowercased().contains(q)
             }
         }
-        if selected >= windows.count { selected = 0 }
+        // Clamp selection in both directions; before this would blow up if
+        // the filter dropped the previously-selected window.
+        if windows.isEmpty {
+            selected = 0
+        } else if selected >= windows.count {
+            selected = max(0, windows.count - 1)
+        }
     }
 
     func advance() {
@@ -43,5 +49,9 @@ final class SwitchModel: ObservableObject {
 
     func backspace() {
         if !filter.isEmpty { filter.removeLast() }
+    }
+
+    func clearFilter() {
+        filter = ""
     }
 }
