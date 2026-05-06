@@ -4,6 +4,8 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>Switch</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -11,8 +13,6 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Switch</string>
-	<key>CFBundleDisplayName</key>
 	<string>Switch</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
@@ -24,11 +24,11 @@
 	<string>14.0</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Switch uses Accessibility to focus, close, and move windows.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>Switch captures window thumbnails so you can see what you're switching to.</string>
-	<key>NSAppleEventsUsageDescription</key>
-	<string>Switch uses Accessibility to focus, close, and move windows.</string>
 </dict>
 </plist>
