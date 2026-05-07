@@ -222,8 +222,7 @@ struct SettingsView: View {
         return "\(v) (\(b))"
     }
 
-    /// Stamped by `scripts/release.sh` at build time. Returns nil for debug
-    /// builds run from Xcode (where the keys aren't injected into the plist).
+    /// nil in debug builds; release.sh stamps the plist.
     private var buildStamp: String? {
         let info = Bundle.main.infoDictionary
         guard let commit = info?["BuildCommit"] as? String,

@@ -1,15 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// Manual settings window. SwiftUI's `Settings { }` scene is unreliable
-/// on `.accessory` apps, so we host `SettingsView` in our own NSWindow.
-///
-/// Activation pattern: switch the app's policy from `.accessory` to `.regular`
-/// while the settings window is open, then revert on close. This is what
-/// menu-bar utilities like Rectangle and Hyperkey do, and is the only
-/// reliable way to bring a window to the foreground from an accessory app
-/// on macOS 14+, where `NSApp.activate(ignoringOtherApps:)` was deprecated
-/// and silently no-ops in some configurations.
+/// Promotes app to .regular while open, reverts to .accessory on close.
+/// Required because SwiftUI's Settings scene + .accessory don't cooperate.
 @MainActor
 final class SettingsWindow {
     static let shared = SettingsWindow()
@@ -19,8 +12,6 @@ final class SettingsWindow {
     private init() {}
 
     func show() {
-        // Promote to .regular so the window can take focus reliably.
-        // The Dock icon flickers on briefly; reverts on close.
         if NSApp.activationPolicy() != .regular {
             NSApp.setActivationPolicy(.regular)
         }
@@ -53,8 +44,6 @@ final class SettingsWindow {
 
     func handleClose() {
         window = nil
-        // Revert to .accessory so we go back to menu-bar-only.
-        // Slight delay so the close animation finishes cleanly.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             NSApp.setActivationPolicy(.accessory)
         }

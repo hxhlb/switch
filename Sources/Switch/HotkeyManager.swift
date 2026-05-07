@@ -29,8 +29,6 @@ final class HotkeyManager {
     private static let kcUpArrow: CGKeyCode = 126
     private static let kcW: CGKeyCode = 13
     private static let kcH: CGKeyCode = 4
-    /// US-keyboard digit keycodes for 1-9 in order. `0` is intentionally absent
-    /// because it's not a useful tenth pick and breaks naturally as filter input.
     private static let kcDigits: [CGKeyCode] = [18, 19, 20, 21, 23, 22, 26, 28, 25]
 
     func start() {
@@ -125,15 +123,12 @@ final class HotkeyManager {
                     }
                     return nil
                 }
-                // Cmd-W closes the selected window (replaces the right-arrow
-                // shortcut from v0.1.5; right-arrow is now navigation).
                 if cmd && kc == Self.kcW {
                     DispatchQueue.main.async { [weak self] in
                         self?.onCloseSelected?()
                     }
                     return nil
                 }
-                // Cmd-H hides the selected window's app (system Hide gesture).
                 if cmd && kc == Self.kcH {
                     DispatchQueue.main.async { [weak self] in
                         self?.onHideSelected?()
@@ -146,8 +141,6 @@ final class HotkeyManager {
                     }
                     return nil
                 }
-                // Digit 1-9 picks the Nth visible tile directly. Digits no
-                // longer participate in filter input as a result.
                 if let index = digitIndex(for: kc) {
                     DispatchQueue.main.async { [weak self] in
                         self?.onPickIndex?(index)
@@ -191,7 +184,6 @@ final class HotkeyManager {
         guard let ns = NSEvent(cgEvent: event),
               let chars = ns.charactersIgnoringModifiers,
               let c = chars.first else { return nil }
-        // Digits are intercepted above as direct-pick shortcuts; not filter input.
         if c.isLetter || c == " " || c == "-" || c == "." {
             return Character(c.lowercased())
         }
