@@ -192,6 +192,12 @@ struct SettingsView: View {
             Text("Version \(appVersion)")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
+            if let stamp = buildStamp {
+                Text(stamp)
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.tertiary)
+                    .textSelection(.enabled)
+            }
             Text("A keyboard-driven window switcher for macOS.")
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
@@ -214,6 +220,16 @@ struct SettingsView: View {
         let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
         let b = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "0"
         return "\(v) (\(b))"
+    }
+
+    /// Stamped by `scripts/release.sh` at build time. Returns nil for debug
+    /// builds run from Xcode (where the keys aren't injected into the plist).
+    private var buildStamp: String? {
+        let info = Bundle.main.infoDictionary
+        guard let commit = info?["BuildCommit"] as? String,
+              let date = info?["BuildDate"] as? String,
+              !commit.isEmpty else { return nil }
+        return "\(commit) · \(date)"
     }
 }
 

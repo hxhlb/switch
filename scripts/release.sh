@@ -36,6 +36,23 @@ echo "==> Stamping Info.plist: version=$VERSION build=$BUILD_NUMBER"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$INFO_PLIST"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$INFO_PLIST"
 
+# Build-stamp the plist with git commit hash + UTC date so the About tab can
+# show provenance. These keys are transient, removed in the EXIT trap below
+# so the source plist stays clean for the next commit.
+COMMIT_SHA=$(git rev-parse --short HEAD)
+BUILD_DATE=$(date -u "+%Y-%m-%d %H:%MZ")
+/usr/libexec/PlistBuddy -c "Delete :BuildCommit" "$INFO_PLIST" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Delete :BuildDate" "$INFO_PLIST" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Add :BuildCommit string $COMMIT_SHA" "$INFO_PLIST"
+/usr/libexec/PlistBuddy -c "Add :BuildDate string $BUILD_DATE" "$INFO_PLIST"
+echo "    (build stamp $COMMIT_SHA · $BUILD_DATE)"
+
+cleanup_stamps() {
+    /usr/libexec/PlistBuddy -c "Delete :BuildCommit" "$INFO_PLIST" 2>/dev/null || true
+    /usr/libexec/PlistBuddy -c "Delete :BuildDate" "$INFO_PLIST" 2>/dev/null || true
+}
+trap cleanup_stamps EXIT
+
 echo "==> Cleaning build dir"
 rm -rf "$BUILD_DIR"
 mkdir -p "$EXPORT_DIR"

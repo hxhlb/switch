@@ -127,6 +127,44 @@ final class SwitchModel: ObservableObject {
         selected = reverse ? (selected - 1 + n) % n : (selected + 1) % n
     }
 
+    /// 2D grid navigation. Cols matches SwitchView.gridColumns; if that ever
+    /// becomes user-configurable, plumb the value through instead of hardcoding.
+    func navigate(direction: HotkeyManager.Direction) {
+        let list = filteredWindows
+        guard !list.isEmpty else { return }
+        let n = list.count
+        let cols = 4
+        let delta: Int
+        switch direction {
+        case .left:  delta = -1
+        case .right: delta = 1
+        case .up:    delta = -cols
+        case .down:  delta = cols
+        }
+        selected = ((selected + delta) % n + n) % n
+    }
+
+    /// Pick the Nth visible tile directly. If the index is out of range we
+    /// no-op (e.g. user pressed 9 with only 5 windows up).
+    func pickIndex(_ index: Int) {
+        let list = filteredWindows
+        guard list.indices.contains(index) else { return }
+        selected = index
+        commitAndDismiss?()
+    }
+
+    /// Hide the selected window's app via NSRunningApplication.hide(). Standard
+    /// Mac Cmd-H gesture, applied to the target app rather than Switch itself.
+    func hideSelected() {
+        let list = filteredWindows
+        guard list.indices.contains(selected) else { return }
+        let target = list[selected]
+        if let app = NSRunningApplication(processIdentifier: target.pid) {
+            app.hide()
+        }
+        cancelAndDismiss?()
+    }
+
     func appendFilter(_ char: Character) {
         filterText.append(char)
         selected = 0

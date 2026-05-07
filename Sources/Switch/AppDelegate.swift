@@ -40,6 +40,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkey.onCloseSelected = {
             model.closeSelected()
         }
+        hotkey.onHideSelected = {
+            model.hideSelected()
+        }
+        hotkey.onNavigate = { direction in
+            model.navigate(direction: direction)
+        }
+        hotkey.onPickIndex = { index in
+            model.pickIndex(index)
+        }
         hotkey.onFilterAppend = { c in
             model.appendFilter(c)
         }

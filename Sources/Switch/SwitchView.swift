@@ -94,10 +94,13 @@ struct SwitchView: View {
 
     private var hintStrip: some View {
         HStack(spacing: 14) {
-            hint("return", "switch")
-            hint("esc", "cancel")
+            hint("↵", "switch")
+            hint("←↑↓→", "navigate")
+            hint("1-9", "pick")
+            hint("⌘W", "close")
+            hint("⌘H", "hide")
             hint("type", "filter")
-            hint("⇧", "reverse")
+            hint("esc", "cancel")
             Spacer()
         }
         .padding(.horizontal, 22)
