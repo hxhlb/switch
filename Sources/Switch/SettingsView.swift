@@ -224,7 +224,7 @@ struct SettingsView: View {
                 .padding(.horizontal, 24)
             HStack(spacing: 18) {
                 Link("Website", destination: URL(string: "https://switch-dev.sanyamgarg.com")!)
-                Link("@sanyamg_", destination: URL(string: "https://x.com/sanyamg_")!)
+                Link("Source", destination: URL(string: "https://github.com/Sanyam-G/switch")!)
             }
             .font(.system(size: 12))
             Button("Check for Updates…") {

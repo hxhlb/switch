@@ -198,18 +198,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 final class SwitcherWindow: NSPanel {
-    private let model: SwitchModel
-    private static let panelWidth: CGFloat = 880
-    private static let gridCols = 4
-    private static let tileHeight: CGFloat = 130
-    private static let tileSpacing: CGFloat = 14
-    private static let chromeHeight: CGFloat = 26 + 12 + 36  // header + bottom pad + hint strip
-    private static let maxVisibleRows = 4
-
     init(model: SwitchModel) {
-        self.model = model
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: Self.panelWidth, height: Self.heightFor(count: 1)),
+            contentRect: NSRect(x: 0, y: 0, width: 880, height: 560),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -238,9 +229,6 @@ final class SwitcherWindow: NSPanel {
         // Re-asserted every present so the panel migrates across Spaces.
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
 
-        let height = Self.heightFor(count: model.filteredWindows.count)
-        setContentSize(NSSize(width: Self.panelWidth, height: height))
-
         let cursor = NSEvent.mouseLocation
         let screen = NSScreen.screens.first(where: { NSMouseInRect(cursor, $0.frame, false) })
             ?? NSScreen.main
@@ -252,11 +240,6 @@ final class SwitcherWindow: NSPanel {
             ))
         }
         orderFrontRegardless()
-    }
-
-    private static func heightFor(count: Int) -> CGFloat {
-        let rows = max(1, min(maxVisibleRows, (max(count, 1) + gridCols - 1) / gridCols))
-        return chromeHeight + CGFloat(rows) * tileHeight + CGFloat(max(0, rows - 1)) * tileSpacing
     }
 
     func dismiss() {

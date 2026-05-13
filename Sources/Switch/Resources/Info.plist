@@ -19,7 +19,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>0.1.7</string>
 	<key>CFBundleVersion</key>
-	<string>8</string>
+	<string>9</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>LSUIElement</key>
@@ -30,11 +30,11 @@
 	<true/>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>Switch captures window thumbnails so you can see what you're switching to.</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
 	<key>SUFeedURL</key>
 	<string>https://switch-dev.sanyamgarg.com/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string></string>
-	<key>SUEnableAutomaticChecks</key>
-	<true/>
 </dict>
 </plist>

@@ -17,7 +17,7 @@ struct SwitchView: View {
         .background(
             VisualEffectBackdrop(material: .hudWindow, blendingMode: .behindWindow)
         )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(width: 880, height: 560)
         .scaleEffect(model.visible ? 1.0 : 0.97)
         .opacity(model.visible ? 1 : 0)
         .animation(.spring(response: 0.18, dampingFraction: 0.86), value: model.visible)
