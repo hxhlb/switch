@@ -121,8 +121,43 @@ spctl --assess --type execute --verbose "$APP_PATH"
 xcrun stapler validate "$DMG_PATH"
 
 echo ""
+echo "==> Signing update for Sparkle appcast"
+SIGN_UPDATE=$(find "$HOME/Library/Developer/Xcode/DerivedData" -path "*Sparkle/bin/sign_update" -type f -print -quit 2>/dev/null)
+APPCAST_ITEM=""
+if [[ -x "$SIGN_UPDATE" ]]; then
+    SIGN_OUT=$("$SIGN_UPDATE" "$DMG_PATH")
+    DMG_LENGTH=$(stat -f%z "$DMG_PATH")
+    PUB_DATE=$(date -u "+%a, %d %b %Y %H:%M:%S +0000")
+    APPCAST_ITEM=$(cat <<EOF
+        <item>
+            <title>Version $VERSION</title>
+            <pubDate>$PUB_DATE</pubDate>
+            <sparkle:version>$BUILD_NUMBER</sparkle:version>
+            <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/Sanyam-G/switch/releases/download/v$VERSION/Switch-$VERSION.dmg"
+                       length="$DMG_LENGTH"
+                       type="application/octet-stream"
+                       $SIGN_OUT />
+        </item>
+EOF
+)
+    echo "$APPCAST_ITEM"
+else
+    echo "    (sign_update not found, skipping appcast snippet — add Sparkle SPM dep first)"
+fi
+
+echo ""
+echo "==> Cleaning intermediate build artifacts"
+rm -rf "$DMG_STAGE" "$EXPORT_DIR" "$ARCHIVE_PATH" "$APP_ZIP"
+
+echo ""
 echo "==> Done"
 ls -lh "$DMG_PATH"
 echo ""
 echo "Upload to GitHub Releases:"
 echo "  $DMG_PATH"
+if [[ -n "$APPCAST_ITEM" ]]; then
+    echo ""
+    echo "Paste the appcast <item> above into ~/Projects/dev/switch/appcast.xml as the newest entry."
+fi
