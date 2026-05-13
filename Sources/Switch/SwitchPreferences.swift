@@ -45,13 +45,19 @@ final class SwitchPreferences: ObservableObject {
         didSet { UserDefaults.standard.set(stickyMode, forKey: SwitchPreferences.stickyModeKey) }
     }
 
+    @Published var disableMouse: Bool {
+        didSet { UserDefaults.standard.set(disableMouse, forKey: disableMouseKey) }
+    }
+
     private let accentKey = "switch.accent"
     private let crossSpaceKey = "switch.showCrossSpace"
     static let stickyModeKey = "switch.stickyMode"
+    private let disableMouseKey = "switch.disableMouse"
 
     private init() {
         accent = AccentChoice(rawValue: UserDefaults.standard.string(forKey: accentKey) ?? "") ?? .system
         showCrossSpace = (UserDefaults.standard.object(forKey: crossSpaceKey) as? Bool) ?? true
         stickyMode = UserDefaults.standard.bool(forKey: SwitchPreferences.stickyModeKey)
+        disableMouse = UserDefaults.standard.bool(forKey: "switch.disableMouse")
     }
 }

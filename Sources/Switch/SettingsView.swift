@@ -137,6 +137,14 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                Toggle(isOn: $prefs.disableMouse) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Keyboard only")
+                        Text("Ignore mouse hover and click while the picker is open.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             Section("Hotkeys") {

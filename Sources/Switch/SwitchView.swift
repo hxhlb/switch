@@ -17,7 +17,7 @@ struct SwitchView: View {
         .background(
             VisualEffectBackdrop(material: .hudWindow, blendingMode: .behindWindow)
         )
-        .frame(width: 880, height: 560)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .scaleEffect(model.visible ? 1.0 : 0.97)
         .opacity(model.visible ? 1 : 0)
         .animation(.spring(response: 0.18, dampingFraction: 0.86), value: model.visible)
@@ -231,6 +231,7 @@ struct SwitchView: View {
         .animation(.easeOut(duration: 0.10), value: hoveredID)
         .contentShape(Rectangle())
         .onHover { isHovering in
+            guard !SwitchPreferences.shared.disableMouse else { return }
             if isHovering {
                 // Ignore hover until cursor has actually moved 10pt+ since panel opened.
                 // Otherwise a static cursor parked over a tile hijacks the default selection.
@@ -251,6 +252,7 @@ struct SwitchView: View {
             }
         }
         .onTapGesture {
+            guard !SwitchPreferences.shared.disableMouse else { return }
             lastSelectionFromMouse = true
             model.selected = index
             model.commitAndDismiss?()
