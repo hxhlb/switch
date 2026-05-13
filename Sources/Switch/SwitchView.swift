@@ -133,6 +133,7 @@ struct SwitchView: View {
     private func tile(window: WindowInfo, index: Int, list: [WindowInfo]) -> some View {
         let selected = index == model.selected
         let hovered = hoveredID == window.id
+        let icon = appIcon(for: window.pid)
 
         return VStack(alignment: .leading, spacing: 7) {
             ZStack(alignment: .bottomLeading) {
@@ -145,7 +146,7 @@ struct SwitchView: View {
                             .padding(6)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .transition(.opacity)
-                    } else if let icon = appIcon(for: window.pid) {
+                    } else if let icon {
                         Image(nsImage: icon)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
@@ -158,7 +159,7 @@ struct SwitchView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
                 .animation(.easeOut(duration: 0.18), value: model.thumbnails[window.id] != nil)
 
-                if let icon = appIcon(for: window.pid) {
+                if let icon {
                     Image(nsImage: icon)
                         .resizable()
                         .frame(width: 32, height: 32)
@@ -257,6 +258,11 @@ struct SwitchView: View {
     }
 
     private func appIcon(for pid: pid_t) -> NSImage? {
-        NSRunningApplication(processIdentifier: pid)?.icon
+        if let cached = Self.iconCache[pid] { return cached }
+        guard let icon = NSRunningApplication(processIdentifier: pid)?.icon else { return nil }
+        Self.iconCache[pid] = icon
+        return icon
     }
+
+    private static var iconCache: [pid_t: NSImage] = [:]
 }
