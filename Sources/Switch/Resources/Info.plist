@@ -30,5 +30,11 @@
 	<true/>
 	<key>NSScreenCaptureUsageDescription</key>
 	<string>Switch captures window thumbnails so you can see what you're switching to.</string>
+	<key>SUFeedURL</key>
+	<string>https://switch-dev.sanyamgarg.com/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string></string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
 </dict>
 </plist>

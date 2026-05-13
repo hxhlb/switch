@@ -1,7 +1,21 @@
 import AppKit
 import SwiftUI
+#if canImport(Sparkle)
+import Sparkle
+#endif
+
+extension Notification.Name {
+    static let switchCheckForUpdates = Notification.Name("switch.checkForUpdates")
+}
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    #if canImport(Sparkle)
+    private lazy var updaterController = SPUStandardUpdaterController(
+        startingUpdater: true,
+        updaterDelegate: nil,
+        userDriverDelegate: nil
+    )
+    #endif
     private var model: SwitchModel?
     private var hotkey: HotkeyManager?
     private var window: SwitcherWindow?
@@ -85,6 +99,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: .switchShowOnboarding, object: nil
         )
         NotificationCenter.default.addObserver(
+            self, selector: #selector(handleCheckForUpdates),
+            name: .switchCheckForUpdates, object: nil
+        )
+        #if canImport(Sparkle)
+        _ = updaterController
+        #endif
+        NotificationCenter.default.addObserver(
             forName: HotkeyConfig.didChangeNotification, object: nil, queue: .main
         ) { [weak self] _ in
             self?.hotkey?.reload()
@@ -141,6 +162,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard !focusTrackerStarted else { return }
         focusTracker?.start()
         focusTrackerStarted = true
+    }
+
+    @objc private func handleCheckForUpdates() {
+        #if canImport(Sparkle)
+        updaterController.checkForUpdates(nil)
+        #else
+        let alert = NSAlert()
+        alert.messageText = "Updates not configured"
+        alert.informativeText = "This build doesn't include Sparkle. Visit switch-dev.sanyamgarg.com to download the latest."
+        alert.runModal()
+        #endif
     }
 
     @objc private func showOnboarding() {

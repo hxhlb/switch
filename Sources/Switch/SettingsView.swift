@@ -227,6 +227,10 @@ struct SettingsView: View {
                 Link("@sanyamg_", destination: URL(string: "https://x.com/sanyamg_")!)
             }
             .font(.system(size: 12))
+            Button("Check for Updates…") {
+                NotificationCenter.default.post(name: .switchCheckForUpdates, object: nil)
+            }
+            .controlSize(.small)
             Text("© 2026 Sanyam Garg. All rights reserved.")
                 .font(.system(size: 10))
                 .foregroundStyle(.tertiary)
