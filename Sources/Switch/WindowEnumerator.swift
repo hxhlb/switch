@@ -10,6 +10,7 @@ struct WindowInfo: Identifiable, Hashable {
     let bounds: CGRect
     var isCrossSpace: Bool = false
     var isMinimized: Bool = false
+    var spaceLabel: String?
 }
 
 enum WindowEnumerator {
@@ -82,6 +83,7 @@ enum WindowEnumerator {
             }
         }
         let cid = CGSMainConnectionID()
+        let labels = spaceLabels(cid: cid)
         return candidates.compactMap { w in
             let arr = [NSNumber(value: w.id)] as CFArray
             let spaces = CGSCopySpacesForWindows(cid, 7, arr)?.takeRetainedValue() as? [Int] ?? []
@@ -90,9 +92,32 @@ enum WindowEnumerator {
             if minimizedIDs.contains(w.id) {
                 out.isMinimized = true
                 out.isCrossSpace = false
+            } else if let sid = spaces.first {
+                out.spaceLabel = labels[sid]
             }
             return out
         }
+    }
+
+    /// Builds a `spaceID → "Desktop N" / "Fullscreen"` map by walking CGS's managed-display spaces in order.
+    private static func spaceLabels(cid: CGSConnectionID) -> [Int: String] {
+        guard let displays = CGSCopyManagedDisplaySpaces(cid)?.takeRetainedValue() as? [[String: Any]] else { return [:] }
+        var out: [Int: String] = [:]
+        var desktop = 0
+        for display in displays {
+            guard let spaces = display["Spaces"] as? [[String: Any]] else { continue }
+            for space in spaces {
+                guard let id = space["id64"] as? Int else { continue }
+                let type = space["type"] as? Int ?? 0
+                if type == 0 {
+                    desktop += 1
+                    out[id] = "Desktop \(desktop)"
+                } else {
+                    out[id] = "Fullscreen"
+                }
+            }
+        }
+        return out
     }
 
     private static func enumerate(option: CGWindowListOption, scope: HotkeyManager.Mode, frontmostPID: pid_t?) -> [WindowInfo] {

@@ -188,7 +188,7 @@ struct SwitchView: View {
                         Spacer()
                         VStack {
                             Spacer()
-                            Text(window.isMinimized ? "MINIMIZED" : "OTHER SPACE")
+                            Text(window.isMinimized ? "MINIMIZED" : (window.spaceLabel?.uppercased() ?? "OTHER SPACE"))
                                 .font(.system(size: 9, weight: .semibold))
                                 .tracking(0.5)
                                 .foregroundStyle(.white.opacity(0.85))
@@ -305,7 +305,7 @@ struct SwitchView: View {
             }
             Spacer(minLength: 6)
             if window.isMinimized || window.isCrossSpace {
-                Text(window.isMinimized ? "MINIMIZED" : "OTHER SPACE")
+                Text(window.isMinimized ? "MINIMIZED" : (window.spaceLabel?.uppercased() ?? "OTHER SPACE"))
                     .font(.system(size: 9, weight: .semibold))
                     .tracking(0.5)
                     .foregroundStyle(.white.opacity(0.85))

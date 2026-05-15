@@ -6,5 +6,6 @@ struct SwitchApp: App {
 
     var body: some Scene {
         Settings { EmptyView() }
+            .commands { CommandGroup(replacing: .appSettings) {} }
     }
 }
