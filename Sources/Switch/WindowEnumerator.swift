@@ -119,6 +119,8 @@ enum WindowEnumerator {
             if skipApps.contains(appName) { continue }
             if isHelperProcess(appName) { continue }
             if blockedPIDs.contains(pid) { continue }
+            let app = NSRunningApplication(processIdentifier: pid)
+            if app == nil || app?.activationPolicy == .prohibited { continue }
             let title = d[kCGWindowName as String] as? String ?? ""
             let boundsDict = d[kCGWindowBounds as String] as? [String: CGFloat] ?? [:]
             let bounds = CGRect(

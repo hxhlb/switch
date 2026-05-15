@@ -18,6 +18,7 @@ final class HotkeyManager {
     var onFilterAppend: ((Character) -> Void)?
     var onFilterBackspace: (() -> Void)?
     var onStickyToggle: (() -> Void)?
+    var onOpenSettings: (() -> Void)?
 
     private var tap: CFMachPort?
     private var source: CFRunLoopSource?
@@ -36,6 +37,7 @@ final class HotkeyManager {
     private static let kcW: CGKeyCode = 13
     private static let kcQ: CGKeyCode = 12
     private static let kcH: CGKeyCode = 4
+    private static let kcComma: CGKeyCode = 43
     private static let kcDigits: [CGKeyCode] = [18, 19, 20, 21, 23, 22, 26, 28, 25]
     private static let kcKeypadDigits: [CGKeyCode] = [83, 84, 85, 86, 87, 88, 89, 91, 92]
 
@@ -206,6 +208,14 @@ final class HotkeyManager {
                 if cmd && kc == Self.kcH {
                     DispatchQueue.main.async { [weak self] in
                         self?.onHideSelected?()
+                    }
+                    return nil
+                }
+                if cmd && kc == Self.kcComma {
+                    DispatchQueue.main.async { [weak self] in
+                        self?.armed = nil
+                        self?.onCancel?()
+                        self?.onOpenSettings?()
                     }
                     return nil
                 }

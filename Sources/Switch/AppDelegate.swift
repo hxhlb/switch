@@ -39,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let hotkey = HotkeyManager()
 
         hotkey.onArm = { [weak self] mode in
+            if SettingsWindow.shared.isVisible { return }
             model.arm(mode)
             self?.schedulePresent(window: window)
         }
@@ -90,6 +91,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         hotkey.onStickyToggle = {
             SwitchPreferences.shared.stickyMode.toggle()
+        }
+        hotkey.onOpenSettings = {
+            MainActor.assumeIsolated { SettingsWindow.shared.show() }
         }
 
         SwitchPreferences.shared.$verticalList

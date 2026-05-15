@@ -61,6 +61,14 @@ final class SwitchPreferences: ObservableObject {
         didSet { UserDefaults.standard.set(mruMixSpaces, forKey: mruMixSpacesKey) }
     }
 
+    @Published var staticOrder: Bool {
+        didSet { UserDefaults.standard.set(staticOrder, forKey: SwitchPreferences.staticOrderKey) }
+    }
+
+    @Published var appOrder: [String] {
+        didSet { UserDefaults.standard.set(appOrder, forKey: SwitchPreferences.appOrderKey) }
+    }
+
     private let accentKey = "switch.accent"
     private let crossSpaceKey = "switch.showCrossSpace"
     nonisolated static let stickyModeKey = "switch.stickyMode"
@@ -68,6 +76,8 @@ final class SwitchPreferences: ObservableObject {
     nonisolated static let verticalListKey = "switch.verticalList"
     nonisolated static let blacklistKey = "switch.blacklist"
     private let mruMixSpacesKey = "switch.mruMixSpaces"
+    nonisolated static let staticOrderKey = "switch.staticOrder"
+    nonisolated static let appOrderKey = "switch.appOrder"
 
     private init() {
         accent = AccentChoice(rawValue: UserDefaults.standard.string(forKey: accentKey) ?? "") ?? .system
@@ -77,5 +87,7 @@ final class SwitchPreferences: ObservableObject {
         verticalList = UserDefaults.standard.bool(forKey: SwitchPreferences.verticalListKey)
         blacklist = Set(UserDefaults.standard.stringArray(forKey: SwitchPreferences.blacklistKey) ?? [])
         mruMixSpaces = (UserDefaults.standard.object(forKey: "switch.mruMixSpaces") as? Bool) ?? true
+        staticOrder = UserDefaults.standard.bool(forKey: SwitchPreferences.staticOrderKey)
+        appOrder = UserDefaults.standard.stringArray(forKey: SwitchPreferences.appOrderKey) ?? []
     }
 }

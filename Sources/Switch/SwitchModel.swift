@@ -39,7 +39,19 @@ final class SwitchModel: ObservableObject {
         let enumeration = WindowEnumerator.enumerate(scope: mode, frontmostPID: frontmostPID)
         let activeFront = enumeration.activeSpace.first
         let ws: [WindowInfo]
-        if SwitchPreferences.shared.mruMixSpaces {
+        if SwitchPreferences.shared.staticOrder {
+            let order = SwitchPreferences.shared.appOrder
+            let rank: (String) -> Int = { order.firstIndex(of: $0) ?? Int.max }
+            let stable: (WindowInfo, WindowInfo) -> Bool = {
+                let ra = rank($0.appName), rb = rank($1.appName)
+                if ra != rb { return ra < rb }
+                if $0.appName.lowercased() != $1.appName.lowercased() {
+                    return $0.appName.lowercased() < $1.appName.lowercased()
+                }
+                return $0.id < $1.id
+            }
+            ws = enumeration.activeSpace.sorted(by: stable) + enumeration.crossSpace.sorted(by: stable)
+        } else if SwitchPreferences.shared.mruMixSpaces {
             let merged = enumeration.activeSpace + enumeration.crossSpace
             ws = WindowMRU.sorted(merged, frontmost: activeFront)
         } else {

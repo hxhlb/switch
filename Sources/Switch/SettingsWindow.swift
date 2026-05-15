@@ -9,6 +9,8 @@ final class SettingsWindow {
 
     private var window: NSWindow?
 
+    var isVisible: Bool { window?.isVisible == true }
+
     private init() {}
 
     func show() {
@@ -34,6 +36,7 @@ final class SettingsWindow {
         win.contentViewController = host
         win.center()
         win.isReleasedWhenClosed = false
+        win.level = .floating
         win.delegate = SettingsWindowDelegate.shared
 
         window = win

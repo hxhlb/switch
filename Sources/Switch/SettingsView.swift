@@ -59,11 +59,12 @@ final class SettingsModel: ObservableObject {
 }
 
 private enum SettingsTab: String, CaseIterable, Identifiable {
-    case general, appearance, about
+    case general, picker, appearance, about
     var id: String { rawValue }
     var label: String {
         switch self {
         case .general: return "General"
+        case .picker: return "Picker"
         case .appearance: return "Appearance"
         case .about: return "About"
         }
@@ -75,6 +76,7 @@ struct SettingsView: View {
     @ObservedObject private var prefs = SwitchPreferences.shared
     @State private var rejectMessage: String?
     @State private var tab: SettingsTab = .general
+    @State private var draggedApp: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -83,6 +85,7 @@ struct SettingsView: View {
             Group {
                 switch tab {
                 case .general:    generalTab
+                case .picker:     pickerTab
                 case .appearance: appearanceTab
                 case .about:      aboutTab
                 }
@@ -112,6 +115,9 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
             }
             Spacer()
+            Text("Hotkeys paused while this window is open.")
+                .font(.system(size: 10))
+                .foregroundStyle(.red)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -132,49 +138,6 @@ struct SettingsView: View {
                         .labelsHidden()
                         .toggleStyle(.switch)
                         .tint(prefs.accent.color)
-                    }
-                }
-
-                section("Behavior") {
-                    VStack(spacing: 0) {
-                        row(title: "Sticky picker",
-                            detail: "Release ⌘ to leave the picker open. Return to switch, Esc to cancel.") {
-                            Toggle("", isOn: $prefs.stickyMode)
-                                .labelsHidden().toggleStyle(.switch)
-                                .tint(prefs.accent.color)
-                        }
-                        Divider().opacity(0.4)
-                        row(title: "Vertical list",
-                            detail: "One window per row instead of a 4-column grid.") {
-                            Toggle("", isOn: $prefs.verticalList)
-                                .labelsHidden().toggleStyle(.switch)
-                                .tint(prefs.accent.color)
-                        }
-                        Divider().opacity(0.4)
-                        row(title: "Keyboard only",
-                            detail: "Ignore mouse hover and click while the picker is open.") {
-                            Toggle("", isOn: $prefs.disableMouse)
-                                .labelsHidden().toggleStyle(.switch)
-                                .tint(prefs.accent.color)
-                        }
-                    }
-                }
-
-                section("Cross-Space") {
-                    VStack(spacing: 0) {
-                        row(title: "Show cross-Space windows",
-                            detail: "Include windows on other Spaces. Picking one moves it to your current Space.") {
-                            Toggle("", isOn: $prefs.showCrossSpace)
-                                .labelsHidden().toggleStyle(.switch)
-                                .tint(prefs.accent.color)
-                        }
-                        Divider().opacity(0.4)
-                        row(title: "Mix by recent use",
-                            detail: "Sort all windows together by recency instead of grouping by Space.") {
-                            Toggle("", isOn: $prefs.mruMixSpaces)
-                                .labelsHidden().toggleStyle(.switch)
-                                .tint(prefs.accent.color)
-                        }
                     }
                 }
 
@@ -208,6 +171,67 @@ struct SettingsView: View {
                     .padding(14)
                     .background(rowBackground)
                 }
+            }
+            .padding(24)
+        }
+    }
+
+    private var pickerTab: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 26) {
+                section("Behavior") {
+                    VStack(spacing: 0) {
+                        row(title: "Sticky picker",
+                            detail: "Release ⌘ to leave the picker open. Return to switch, Esc to cancel.") {
+                            Toggle("", isOn: $prefs.stickyMode)
+                                .labelsHidden().toggleStyle(.switch)
+                                .tint(prefs.accent.color)
+                        }
+                        Divider().opacity(0.4)
+                        row(title: "Vertical list",
+                            detail: "One window per row instead of a 4-column grid.") {
+                            Toggle("", isOn: $prefs.verticalList)
+                                .labelsHidden().toggleStyle(.switch)
+                                .tint(prefs.accent.color)
+                        }
+                        Divider().opacity(0.4)
+                        row(title: "Keyboard only",
+                            detail: "Ignore mouse hover and click while the picker is open.") {
+                            Toggle("", isOn: $prefs.disableMouse)
+                                .labelsHidden().toggleStyle(.switch)
+                                .tint(prefs.accent.color)
+                        }
+                        Divider().opacity(0.4)
+                        row(title: "Static order",
+                            detail: "Keep windows in the same spot every time instead of sorting by recent use.") {
+                            Toggle("", isOn: $prefs.staticOrder)
+                                .labelsHidden().toggleStyle(.switch)
+                                .tint(prefs.accent.color)
+                        }
+                        if prefs.staticOrder {
+                            Divider().opacity(0.4)
+                            appOrderList
+                        }
+                    }
+                }
+
+                section("Cross-Space") {
+                    VStack(spacing: 0) {
+                        row(title: "Show cross-Space windows",
+                            detail: "Include windows on other Spaces. Picking one moves it to your current Space.") {
+                            Toggle("", isOn: $prefs.showCrossSpace)
+                                .labelsHidden().toggleStyle(.switch)
+                                .tint(prefs.accent.color)
+                        }
+                        Divider().opacity(0.4)
+                        row(title: "Mix by recent use",
+                            detail: "Sort all windows together by recency instead of grouping by Space.") {
+                            Toggle("", isOn: $prefs.mruMixSpaces)
+                                .labelsHidden().toggleStyle(.switch)
+                                .tint(prefs.accent.color)
+                        }
+                    }
+                }
 
                 blacklistSection
             }
@@ -233,6 +257,72 @@ struct SettingsView: View {
             }
             Spacer()
         }
+    }
+
+    private var appOrderList: some View {
+        let apps = orderedPickerApps()
+        return VStack(alignment: .leading, spacing: 6) {
+            Text("Drag to reorder. Unranked apps fall to the bottom alphabetically.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+            if apps.isEmpty {
+                Text("No windows open right now.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+            } else {
+                VStack(spacing: 2) {
+                    ForEach(apps, id: \.self) { name in
+                        appOrderRow(name: name)
+                            .onDrag {
+                                draggedApp = name
+                                return NSItemProvider(object: name as NSString)
+                            }
+                            .onDrop(of: [.text], delegate: AppOrderDropDelegate(
+                                item: name,
+                                current: $draggedApp,
+                                apps: apps,
+                                commit: { prefs.appOrder = $0 }
+                            ))
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+    }
+
+    private func appOrderRow(name: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(.tertiary)
+                .font(.system(size: 11))
+            if let icon = iconForApp(named: name) {
+                Image(nsImage: icon).resizable().frame(width: 18, height: 18)
+            }
+            Text(name).font(.system(size: 12))
+            Spacer()
+        }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 6)
+        .contentShape(Rectangle())
+        .background(
+            RoundedRectangle(cornerRadius: 5)
+                .fill(draggedApp == name ? Color.accentColor.opacity(0.10) : Color.clear)
+        )
+    }
+
+    private func orderedPickerApps() -> [String] {
+        let names = Set(WindowEnumerator.currentWindows(scope: .allWindows, frontmostPID: nil).map(\.appName))
+        let ranked = prefs.appOrder.filter { names.contains($0) }
+        let unranked = names.subtracting(ranked).sorted { $0.lowercased() < $1.lowercased() }
+        return ranked + unranked
+    }
+
+    private func iconForApp(named name: String) -> NSImage? {
+        if let app = NSWorkspace.shared.runningApplications.first(where: { $0.localizedName == name }) {
+            return app.icon
+        }
+        return nil
     }
 
     private var blacklistSection: some View {
@@ -311,12 +401,11 @@ struct SettingsView: View {
     }
 
     private func addableApps() -> [NSRunningApplication] {
-        let blocked = prefs.blacklist
+        let pids = Set(WindowEnumerator.currentWindows(scope: .allWindows, frontmostPID: nil).map(\.pid))
         let ownBundle = Bundle.main.bundleIdentifier
         return NSWorkspace.shared.runningApplications
-            .filter { $0.activationPolicy == .regular }
+            .filter { pids.contains($0.processIdentifier) }
             .filter { $0.bundleIdentifier != ownBundle }
-            .filter { ($0.bundleIdentifier.map { !blocked.contains($0) } ?? false) }
             .sorted { ($0.localizedName ?? "") < ($1.localizedName ?? "") }
     }
 
@@ -546,7 +635,8 @@ final class KeyRecorderNSView: NSView {
     var accentNSColor: NSColor = .controlAccentColor { didSet { redraw() } }
     var placeholder: String = "—" { didSet { redraw() } }
     private let label = NSTextField(labelWithString: "")
-    private var monitor: Any?
+    private var eventTap: CFMachPort?
+    private var runLoopSource: CFRunLoopSource?
     private var recording = false { didSet { redraw() } }
 
     var binding: HotkeyBinding = .defaultAllWindows {
@@ -585,35 +675,51 @@ final class KeyRecorderNSView: NSView {
         return super.resignFirstResponder()
     }
 
-    deinit {
-        if let m = monitor { NSEvent.removeMonitor(m) }
-    }
+    deinit { stopRecording(commit: false) }
 
+    // NSEvent local monitors never see Cmd+Tab (system app switcher grabs it upstream).
+    // Session tap at head fires first, swallows.
     private func startRecording() {
         recording = true
         window?.makeFirstResponder(self)
-        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { [weak self] e in
-            guard let self else { return e }
-            if e.type == .keyDown {
-                let nsMods = e.modifierFlags.intersection(.deviceIndependentFlagsMask)
-                var cg: CGEventFlags = []
-                if nsMods.contains(.command) { cg.insert(.maskCommand) }
-                if nsMods.contains(.option) { cg.insert(.maskAlternate) }
-                if nsMods.contains(.control) { cg.insert(.maskControl) }
-                if nsMods.contains(.shift) { cg.insert(.maskShift) }
-                let b = HotkeyBinding(keyCode: e.keyCode, modifiersRaw: cg.rawValue)
-                self.binding = b
-                self.onCapture?(b)
-                self.stopRecording(commit: true)
-                return nil
-            }
-            return e
-        }
+        let mask = CGEventMask((1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.flagsChanged.rawValue))
+        let info = Unmanaged.passUnretained(self).toOpaque()
+        guard let tap = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap,
+                                          options: .defaultTap, eventsOfInterest: mask,
+                                          callback: { _, type, event, info in
+            guard let info else { return Unmanaged.passUnretained(event) }
+            return Unmanaged<KeyRecorderNSView>.fromOpaque(info).takeUnretainedValue().capture(type, event)
+        }, userInfo: info) else { return }
+        let src = CFMachPortCreateRunLoopSource(nil, tap, 0)
+        CFRunLoopAddSource(CFRunLoopGetCurrent(), src, .commonModes)
+        CGEvent.tapEnable(tap: tap, enable: true)
+        eventTap = tap
+        runLoopSource = src
     }
 
     private func stopRecording(commit: Bool) {
-        if let m = monitor { NSEvent.removeMonitor(m); monitor = nil }
+        if let tap = eventTap { CGEvent.tapEnable(tap: tap, enable: false) }
+        if let src = runLoopSource { CFRunLoopRemoveSource(CFRunLoopGetCurrent(), src, .commonModes) }
+        eventTap = nil
+        runLoopSource = nil
         recording = false
+    }
+
+    fileprivate func capture(_ type: CGEventType, _ event: CGEvent) -> Unmanaged<CGEvent>? {
+        if type == .flagsChanged { return nil }
+        guard type == .keyDown else { return Unmanaged.passUnretained(event) }
+        let kc = CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode))
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            if kc != 53 {
+                let mods: CGEventFlags = [.maskCommand, .maskAlternate, .maskControl, .maskShift]
+                let b = HotkeyBinding(keyCode: UInt16(kc), modifiersRaw: event.flags.intersection(mods).rawValue)
+                self.binding = b
+                self.onCapture?(b)
+            }
+            self.stopRecording(commit: kc != 53)
+        }
+        return nil
     }
 
     private func redraw() {
@@ -633,5 +739,29 @@ final class KeyRecorderNSView: NSView {
             layer?.borderColor = NSColor.separatorColor.cgColor
             layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.6).cgColor
         }
+    }
+}
+
+private struct AppOrderDropDelegate: DropDelegate {
+    let item: String
+    @Binding var current: String?
+    let apps: [String]
+    let commit: ([String]) -> Void
+
+    func dropEntered(info: DropInfo) {
+        guard let from = current, from != item,
+              let src = apps.firstIndex(of: from),
+              let dst = apps.firstIndex(of: item) else { return }
+        var next = apps
+        next.remove(at: src)
+        next.insert(from, at: dst)
+        commit(next)
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? { DropProposal(operation: .move) }
+
+    func performDrop(info: DropInfo) -> Bool {
+        current = nil
+        return true
     }
 }
