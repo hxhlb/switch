@@ -23,6 +23,9 @@ final class HotkeyManager {
     private var tap: CFMachPort?
     private var source: CFRunLoopSource?
     private var armed: Mode?
+    private var armedAt: Date?
+    private var advanced = false
+    private static let stickyQuickTapMS: Double = 200
     private var wakeToken: NSObjectProtocol?
     private var screensWakeToken: NSObjectProtocol?
     private var healthTimer: Timer?
@@ -158,16 +161,16 @@ final class HotkeyManager {
             if allBinding.matchesTrigger(keyCode: kc, flags: flags) {
                 DispatchQueue.main.async { [weak self] in
                     guard let self else { return }
-                    if armed == nil { armed = .allWindows; onArm?(.allWindows) }
-                    else { onAdvance?(shift) }
+                    if armed == nil { armed = .allWindows; armedAt = Date(); advanced = false; onArm?(.allWindows) }
+                    else { advanced = true; onAdvance?(shift) }
                 }
                 return nil
             }
             if appBinding.matchesTrigger(keyCode: kc, flags: flags) {
                 DispatchQueue.main.async { [weak self] in
                     guard let self else { return }
-                    if armed == nil { armed = .currentApp; onArm?(.currentApp) }
-                    else { onAdvance?(shift) }
+                    if armed == nil { armed = .currentApp; armedAt = Date(); advanced = false; onArm?(.currentApp) }
+                    else { advanced = true; onAdvance?(shift) }
                 }
                 return nil
             }
@@ -190,12 +193,6 @@ final class HotkeyManager {
                 if kc == Self.kcDelete {
                     DispatchQueue.main.async { [weak self] in
                         self?.onFilterBackspace?()
-                    }
-                    return nil
-                }
-                if cmd && kc == Self.kcW {
-                    DispatchQueue.main.async { [weak self] in
-                        self?.onCloseSelected?()
                     }
                     return nil
                 }
@@ -242,15 +239,16 @@ final class HotkeyManager {
 
         if type == .flagsChanged {
             let sticky = UserDefaults.standard.bool(forKey: SwitchPreferences.stickyModeKey)
+            let quickTap = (armedAt.map { Date().timeIntervalSince($0) * 1000 < Self.stickyQuickTapMS } ?? false) && !advanced
             if armed == .allWindows && !HotkeyConfig.shared.allWindows.modifiersHeld(flags) {
-                if !sticky {
+                if !sticky || quickTap {
                     DispatchQueue.main.async { [weak self] in
                         self?.armed = nil
                         self?.onCommit?()
                     }
                 }
             } else if armed == .currentApp && !HotkeyConfig.shared.currentApp.modifiersHeld(flags) {
-                if !sticky {
+                if !sticky || quickTap {
                     DispatchQueue.main.async { [weak self] in
                         self?.armed = nil
                         self?.onCommit?()

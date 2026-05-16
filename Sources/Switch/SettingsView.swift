@@ -59,14 +59,14 @@ final class SettingsModel: ObservableObject {
 }
 
 private enum SettingsTab: String, CaseIterable, Identifiable {
-    case general, picker, appearance, about
+    case general, picker, permissions, appearance
     var id: String { rawValue }
     var label: String {
         switch self {
         case .general: return "General"
         case .picker: return "Picker"
+        case .permissions: return "Permissions"
         case .appearance: return "Appearance"
-        case .about: return "About"
         }
     }
 }
@@ -84,10 +84,10 @@ struct SettingsView: View {
             Divider().opacity(0.5)
             Group {
                 switch tab {
-                case .general:    generalTab
-                case .picker:     pickerTab
-                case .appearance: appearanceTab
-                case .about:      aboutTab
+                case .general:     generalTab
+                case .picker:      pickerTab
+                case .permissions: permissionsTab
+                case .appearance:  appearanceTab
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -442,57 +442,8 @@ struct SettingsView: View {
         }
     }
 
-    private var aboutTab: some View {
-        VStack(spacing: 16) {
-            Spacer(minLength: 0)
-            if let icon = NSImage(named: "AppIcon") {
-                Image(nsImage: icon)
-                    .resizable()
-                    .frame(width: 92, height: 92)
-                    .shadow(color: .black.opacity(0.35), radius: 8, y: 4)
-            }
-            VStack(spacing: 4) {
-                Text("Switch")
-                    .font(.system(size: 22, weight: .semibold))
-                Text("Version \(appVersion)")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                if let stamp = buildStamp {
-                    Text(stamp)
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(.tertiary)
-                        .textSelection(.enabled)
-                }
-            }
-            Text("Keyboard-driven window switcher for macOS.")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
-
-            HStack(spacing: 8) {
-                pillLink("Website", url: "https://switch-dev.sanyamgarg.com")
-                pillLink("Source", url: "https://github.com/Sanyam-G/switch")
-                Button {
-                    NotificationCenter.default.post(name: .switchCheckForUpdates, object: nil)
-                } label: {
-                    Text("Check for Updates")
-                        .font(.system(size: 11, weight: .medium))
-                        .padding(.horizontal, 11)
-                        .padding(.vertical, 5)
-                        .background(prefs.accent.color.opacity(0.14))
-                        .foregroundStyle(prefs.accent.color)
-                        .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-            }
-            Spacer(minLength: 0)
-            Text("© 2026 Sanyam Garg")
-                .font(.system(size: 10))
-                .foregroundStyle(.tertiary)
-                .padding(.bottom, 12)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    private var permissionsTab: some View {
+        PermissionsTabView(accent: prefs.accent.color)
     }
 
     // MARK: - Building blocks
@@ -588,18 +539,64 @@ struct SettingsView: View {
         }
     }
 
-    private var appVersion: String {
-        let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0"
-        let b = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "0"
-        return "\(v) (\(b))"
+}
+
+struct PermissionsTabView: View {
+    let accent: Color
+    @StateObject private var perms = OnboardingModel()
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                Text("Switch needs Accessibility for the ⌘-Tab hotkey and Screen Recording for window thumbnails. Both are macOS privacy gates.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+
+                permRow(
+                    title: "Accessibility",
+                    detail: "Intercept ⌘-Tab and ⌥-` system-wide.",
+                    granted: perms.accessibility,
+                    action: { perms.openAccessibility() }
+                )
+                permRow(
+                    title: "Screen Recording",
+                    detail: "Capture live thumbnails of every window.",
+                    granted: perms.screenCapture,
+                    action: { perms.openScreenCapture() }
+                )
+            }
+            .padding(24)
+        }
+        .onAppear { perms.startPolling() }
+        .onDisappear { perms.stopPolling() }
     }
 
-    private var buildStamp: String? {
-        let info = Bundle.main.infoDictionary
-        guard let commit = info?["BuildCommit"] as? String,
-              let date = info?["BuildDate"] as? String,
-              !commit.isEmpty else { return nil }
-        return "\(commit) · \(date)"
+    private func permRow(title: String, detail: String, granted: Bool, action: @escaping () -> Void) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: granted ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(granted ? Color.green : Color.orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.system(size: 13, weight: .medium))
+                Text(detail).font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+            Spacer()
+            if !granted {
+                Button("Open in System Settings", action: action)
+                    .controlSize(.small)
+            } else {
+                Text("Granted").font(.system(size: 11)).foregroundStyle(.tertiary)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+                )
+        )
     }
 }
 

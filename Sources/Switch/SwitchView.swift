@@ -113,7 +113,6 @@ struct SwitchView: View {
                 hint("←↑↓→", "navigate")
                 hint("1-9", "pick")
             }
-            hint("⌘W", "close")
             hint("⌘Q", "quit")
             hint("⌘H", "hide")
             hint("type", "filter")
@@ -123,6 +122,25 @@ struct SwitchView: View {
         .padding(.horizontal, 22)
         .padding(.vertical, 10)
         .background(Color.black.opacity(0.18))
+    }
+
+    private func closeButton(for window: WindowInfo) -> some View {
+        Button {
+            model.close(window)
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(Color(red: 1.0, green: 0.36, blue: 0.34))
+                    .frame(width: 14, height: 14)
+                    .shadow(color: .black.opacity(0.35), radius: 1, y: 0.5)
+                Image(systemName: "xmark")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(.black.opacity(0.55))
+            }
+        }
+        .buttonStyle(.plain)
+        .opacity(prefs.disableMouse ? 0 : 1)
+        .allowsHitTesting(!prefs.disableMouse)
     }
 
     private func hint(_ key: String, _ label: String) -> some View {
@@ -173,6 +191,9 @@ struct SwitchView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 130)
                 .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .overlay(alignment: .topTrailing) {
+                    closeButton(for: window).padding(7)
+                }
                 .animation(.easeOut(duration: 0.18), value: model.thumbnails[window.id] != nil)
 
                 if let icon {
@@ -304,6 +325,8 @@ struct SwitchView: View {
                 }
             }
             Spacer(minLength: 6)
+            closeButton(for: window)
+                .opacity(hovered ? 1 : 0.45)
             if window.isMinimized || window.isCrossSpace {
                 Text(window.isMinimized ? "MINIMIZED" : (window.spaceLabel?.uppercased() ?? "OTHER SPACE"))
                     .font(.system(size: 9, weight: .semibold))

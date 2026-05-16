@@ -20,13 +20,13 @@ final class StatusBarController {
 
         menu.addItem(.separator())
 
+        let about = NSMenuItem(title: "About Switch", action: #selector(openAbout), keyEquivalent: "")
+        about.target = self
+        menu.addItem(about)
+
         let settings = NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
         settings.target = self
         menu.addItem(settings)
-
-        let permissions = NSMenuItem(title: "Permissions…", action: #selector(showOnboarding), keyEquivalent: "")
-        permissions.target = self
-        menu.addItem(permissions)
 
         menu.addItem(.separator())
 
@@ -43,6 +43,10 @@ final class StatusBarController {
 
     @objc private func openSettings() {
         MainActor.assumeIsolated { SettingsWindow.shared.show() }
+    }
+
+    @objc private func openAbout() {
+        MainActor.assumeIsolated { AboutWindow.shared.show() }
     }
 }
 

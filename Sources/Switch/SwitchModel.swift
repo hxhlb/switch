@@ -81,10 +81,11 @@ final class SwitchModel: ObservableObject {
     func closeSelected() {
         let list = filteredWindows
         guard list.indices.contains(selected) else { return }
-        let target = list[selected]
+        close(list[selected])
+    }
+
+    func close(_ target: WindowInfo) {
         WindowCloser.close(target)
-        // The actual close is async on the target app's side; remove optimistically and let
-        // a short delay pass before re-enumerating so the AX cache catches up.
         windows.removeAll { $0.id == target.id }
         thumbnails[target.id] = nil
         let remaining = filteredWindows

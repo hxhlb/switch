@@ -11,6 +11,12 @@ final class SettingsWindow {
 
     var isVisible: Bool { window?.isVisible == true }
 
+    /// Drop level so Sparkle's update sheet/window isn't covered by the floating Settings.
+    /// Restored to .floating when Settings regains key (see delegate).
+    func dropLevelForDialog() {
+        window?.level = .normal
+    }
+
     private init() {}
 
     func show() {
@@ -60,5 +66,9 @@ private final class SettingsWindowDelegate: NSObject, NSWindowDelegate {
         Task { @MainActor in
             SettingsWindow.shared.handleClose()
         }
+    }
+
+    func windowDidBecomeKey(_ notification: Notification) {
+        if let win = notification.object as? NSWindow { win.level = .floating }
     }
 }
