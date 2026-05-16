@@ -124,23 +124,35 @@ struct SwitchView: View {
         .background(Color.black.opacity(0.18))
     }
 
-    private func closeButton(for window: WindowInfo) -> some View {
-        Button {
-            model.close(window)
-        } label: {
+    private func stoplights(for window: WindowInfo) -> some View {
+        HStack(spacing: 4) {
+            stoplight(color: Color(red: 1.0, green: 0.36, blue: 0.34), symbol: "xmark") {
+                model.close(window)
+            }
+            stoplight(color: Color(red: 1.0, green: 0.74, blue: 0.20), symbol: "minus") {
+                WindowMinimizer.minimize(window)
+            }
+            stoplight(color: Color(red: 0.30, green: 0.78, blue: 0.34), symbol: "plus") {
+                WindowZoomer.zoom(window)
+            }
+        }
+        .opacity(prefs.disableMouse ? 0 : 1)
+        .allowsHitTesting(!prefs.disableMouse)
+    }
+
+    private func stoplight(color: Color, symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             ZStack {
                 Circle()
-                    .fill(Color(red: 1.0, green: 0.36, blue: 0.34))
-                    .frame(width: 14, height: 14)
+                    .fill(color)
+                    .frame(width: 12, height: 12)
                     .shadow(color: .black.opacity(0.35), radius: 1, y: 0.5)
-                Image(systemName: "xmark")
-                    .font(.system(size: 8, weight: .bold))
+                Image(systemName: symbol)
+                    .font(.system(size: 7, weight: .bold))
                     .foregroundStyle(.black.opacity(0.55))
             }
         }
         .buttonStyle(.plain)
-        .opacity(prefs.disableMouse ? 0 : 1)
-        .allowsHitTesting(!prefs.disableMouse)
     }
 
     private func hint(_ key: String, _ label: String) -> some View {
@@ -192,7 +204,7 @@ struct SwitchView: View {
                 .frame(height: 130)
                 .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
                 .overlay(alignment: .topTrailing) {
-                    closeButton(for: window).padding(7)
+                    stoplights(for: window).padding(7)
                 }
                 .animation(.easeOut(duration: 0.18), value: model.thumbnails[window.id] != nil)
 
@@ -325,7 +337,7 @@ struct SwitchView: View {
                 }
             }
             Spacer(minLength: 6)
-            closeButton(for: window)
+            stoplights(for: window)
                 .opacity(hovered ? 1 : 0.45)
             if window.isMinimized || window.isCrossSpace {
                 Text(window.isMinimized ? "MINIMIZED" : (window.spaceLabel?.uppercased() ?? "OTHER SPACE"))

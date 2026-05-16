@@ -64,26 +64,32 @@ enum AppCloser {
 }
 
 enum WindowCloser {
-    /// Sends a close action to the AX window matching `window`. Best-effort.
-    static func close(_ window: WindowInfo) {
-        let appAX = AXUIElementCreateApplication(window.pid)
-        var ref: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(appAX, kAXWindowsAttribute as CFString, &ref) == .success,
-              let axWindows = ref as? [AXUIElement] else { return }
+    static func close(_ window: WindowInfo) { pressButton(window, attribute: kAXCloseButtonAttribute) }
+}
 
-        // Direct CGWindowID match via private SPI, same as focus. Title
-        // matching alone closed the wrong Chrome window when titles collided.
-        let exact = axWindows.first(where: { axWindowID($0) == window.id })
-        let target = exact
-            ?? axWindows.first(where: { AXHelpers.title(of: $0) == window.title })
-            ?? axWindows.first
-        guard let target else { return }
-        var btnRef: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(target, kAXCloseButtonAttribute as CFString, &btnRef) == .success,
-              let btnObj = btnRef else { return }
-        let closeBtn = btnObj as! AXUIElement
-        AXUIElementPerformAction(closeBtn, kAXPressAction as CFString)
-    }
+enum WindowMinimizer {
+    static func minimize(_ window: WindowInfo) { pressButton(window, attribute: kAXMinimizeButtonAttribute) }
+}
+
+enum WindowZoomer {
+    static func zoom(_ window: WindowInfo) { pressButton(window, attribute: kAXZoomButtonAttribute) }
+}
+
+/// Press one of the stoplight buttons on the AX window matching `window`. Best-effort.
+private func pressButton(_ window: WindowInfo, attribute: String) {
+    let appAX = AXUIElementCreateApplication(window.pid)
+    var ref: CFTypeRef?
+    guard AXUIElementCopyAttributeValue(appAX, kAXWindowsAttribute as CFString, &ref) == .success,
+          let axWindows = ref as? [AXUIElement] else { return }
+    let exact = axWindows.first(where: { axWindowID($0) == window.id })
+    let target = exact
+        ?? axWindows.first(where: { AXHelpers.title(of: $0) == window.title })
+        ?? axWindows.first
+    guard let target else { return }
+    var btnRef: CFTypeRef?
+    guard AXUIElementCopyAttributeValue(target, attribute as CFString, &btnRef) == .success,
+          let btnObj = btnRef else { return }
+    AXUIElementPerformAction(btnObj as! AXUIElement, kAXPressAction as CFString)
 }
 
 enum AXHelpers {
