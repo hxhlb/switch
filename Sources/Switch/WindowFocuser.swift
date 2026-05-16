@@ -9,6 +9,17 @@ private func axWindowID(_ element: AXUIElement) -> CGWindowID? {
 
 enum WindowFocuser {
     static func focus(_ window: WindowInfo) {
+        if window.isWindowless {
+            let app = NSRunningApplication(processIdentifier: window.pid)
+            if let url = app?.bundleURL {
+                let config = NSWorkspace.OpenConfiguration()
+                config.activates = true
+                NSWorkspace.shared.openApplication(at: url, configuration: config, completionHandler: nil)
+            } else {
+                app?.activate(options: [])
+            }
+            return
+        }
         if window.isCrossSpace {
             let cid = CGSMainConnectionID()
             let currentSpace = CGSGetActiveSpace(cid)

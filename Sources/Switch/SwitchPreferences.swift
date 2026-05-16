@@ -69,6 +69,10 @@ final class SwitchPreferences: ObservableObject {
         didSet { UserDefaults.standard.set(appOrder, forKey: SwitchPreferences.appOrderKey) }
     }
 
+    @Published var includeWindowlessApps: Bool {
+        didSet { UserDefaults.standard.set(includeWindowlessApps, forKey: SwitchPreferences.includeWindowlessKey) }
+    }
+
     private let accentKey = "switch.accent"
     private let crossSpaceKey = "switch.showCrossSpace"
     nonisolated static let stickyModeKey = "switch.stickyMode"
@@ -78,6 +82,7 @@ final class SwitchPreferences: ObservableObject {
     private let mruMixSpacesKey = "switch.mruMixSpaces"
     nonisolated static let staticOrderKey = "switch.staticOrder"
     nonisolated static let appOrderKey = "switch.appOrder"
+    nonisolated static let includeWindowlessKey = "switch.includeWindowlessApps"
 
     private init() {
         accent = AccentChoice(rawValue: UserDefaults.standard.string(forKey: accentKey) ?? "") ?? .system
@@ -89,5 +94,6 @@ final class SwitchPreferences: ObservableObject {
         mruMixSpaces = (UserDefaults.standard.object(forKey: "switch.mruMixSpaces") as? Bool) ?? true
         staticOrder = UserDefaults.standard.bool(forKey: SwitchPreferences.staticOrderKey)
         appOrder = UserDefaults.standard.stringArray(forKey: SwitchPreferences.appOrderKey) ?? []
+        includeWindowlessApps = UserDefaults.standard.bool(forKey: SwitchPreferences.includeWindowlessKey)
     }
 }

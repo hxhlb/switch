@@ -59,17 +59,37 @@ final class SwitchModel: ObservableObject {
             let crossSorted = WindowMRU.sorted(enumeration.crossSpace, frontmost: nil)
             ws = activeSorted + crossSorted
         }
-        WindowMRU.purge(keeping: Set(ws.map { $0.id }))
-        windows = ws
-        selected = ws.count > 1 ? 1 : 0
+        var final = ws
+        if SwitchPreferences.shared.includeWindowlessApps && mode == .allWindows {
+            let livePIDs = Set(final.map { $0.pid })
+            let ownBundle = Bundle.main.bundleIdentifier
+            let extras = NSWorkspace.shared.runningApplications
+                .filter { $0.activationPolicy == .regular && !livePIDs.contains($0.processIdentifier) && $0.bundleIdentifier != ownBundle }
+                .sorted { ($0.localizedName ?? "") < ($1.localizedName ?? "") }
+                .map { app in
+                    WindowInfo(
+                        id: CGWindowID(0xF0000000) | CGWindowID(UInt32(bitPattern: Int32(app.processIdentifier))),
+                        pid: app.processIdentifier,
+                        appName: app.localizedName ?? "",
+                        title: "",
+                        bounds: .zero,
+                        isWindowless: true
+                    )
+                }
+            final += extras
+        }
+        WindowMRU.purge(keeping: Set(final.map { $0.id }))
+        windows = final
+        selected = final.count > 1 ? 1 : 0
         visible = true
-        let liveIDs = Set(ws.map { $0.id })
+        let liveIDs = Set(final.filter { !$0.isWindowless }.map { $0.id })
+        let thumbTargets = final.filter { !$0.isWindowless }
         Task {
             if #available(macOS 14.0, *) {
                 // Don't full-purge — pre-warmed thumbs are valid as long as the window still exists.
                 await WindowSnapshotter.shared.purge(keeping: liveIDs)
             }
-            await fetchThumbnails(for: ws, force: false)
+            await fetchThumbnails(for: thumbTargets, force: false)
         }
         startRefreshTimer()
         if !hasArmedOnce {

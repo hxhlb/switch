@@ -11,6 +11,7 @@ struct WindowInfo: Identifiable, Hashable {
     var isCrossSpace: Bool = false
     var isMinimized: Bool = false
     var spaceLabel: String?
+    var isWindowless: Bool = false
 }
 
 enum WindowEnumerator {

@@ -212,6 +212,13 @@ struct SettingsView: View {
                             Divider().opacity(0.4)
                             appOrderList
                         }
+                        Divider().opacity(0.4)
+                        row(title: "Include apps with no windows",
+                            detail: "Show running Dock apps that don't currently have any windows. Picking one activates the app.") {
+                            Toggle("", isOn: $prefs.includeWindowlessApps)
+                                .labelsHidden().toggleStyle(.switch)
+                                .tint(prefs.accent.color)
+                        }
                     }
                 }
 

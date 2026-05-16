@@ -203,8 +203,8 @@ struct SwitchView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 130)
                 .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                .overlay(alignment: .topTrailing) {
-                    stoplights(for: window).padding(7)
+                .overlay(alignment: .topLeading) {
+                    if !window.isWindowless { stoplights(for: window).padding(7) }
                 }
                 .animation(.easeOut(duration: 0.18), value: model.thumbnails[window.id] != nil)
 
@@ -216,12 +216,12 @@ struct SwitchView: View {
                         .padding(7)
                 }
 
-                if window.isMinimized || window.isCrossSpace {
+                if window.isMinimized || window.isCrossSpace || window.isWindowless {
                     HStack(spacing: 0) {
                         Spacer()
                         VStack {
                             Spacer()
-                            Text(window.isMinimized ? "MINIMIZED" : (window.spaceLabel?.uppercased() ?? "OTHER SPACE"))
+                            Text(window.isMinimized ? "MINIMIZED" : (window.isWindowless ? "NO WINDOWS" : (window.spaceLabel?.uppercased() ?? "OTHER SPACE")))
                                 .font(.system(size: 9, weight: .semibold))
                                 .tracking(0.5)
                                 .foregroundStyle(.white.opacity(0.85))
@@ -337,10 +337,12 @@ struct SwitchView: View {
                 }
             }
             Spacer(minLength: 6)
-            stoplights(for: window)
-                .opacity(hovered ? 1 : 0.45)
-            if window.isMinimized || window.isCrossSpace {
-                Text(window.isMinimized ? "MINIMIZED" : (window.spaceLabel?.uppercased() ?? "OTHER SPACE"))
+            if !window.isWindowless {
+                stoplights(for: window)
+                    .opacity(hovered ? 1 : 0.45)
+            }
+            if window.isMinimized || window.isCrossSpace || window.isWindowless {
+                Text(window.isMinimized ? "MINIMIZED" : (window.isWindowless ? "NO WINDOWS" : (window.spaceLabel?.uppercased() ?? "OTHER SPACE")))
                     .font(.system(size: 9, weight: .semibold))
                     .tracking(0.5)
                     .foregroundStyle(.white.opacity(0.85))
