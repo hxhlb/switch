@@ -83,7 +83,7 @@ final class SwitchModel: ObservableObject {
         }
         WindowMRU.purge(keeping: Set(final.map { $0.id }))
         windows = final
-        selected = final.count > 1 ? 1 : 0
+        selected = SwitchPreferences.shared.stickyMode ? 0 : (final.count > 1 ? 1 : 0)
         visible = true
         let liveIDs = Set(final.filter { !$0.isWindowless }.map { $0.id })
         let thumbTargets = final.filter { !$0.isWindowless }

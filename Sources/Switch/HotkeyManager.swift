@@ -176,6 +176,7 @@ final class HotkeyManager {
             }
 
             if armed != nil {
+                let sticky = UserDefaults.standard.bool(forKey: SwitchPreferences.stickyModeKey)
                 if kc == Self.kcEscape {
                     DispatchQueue.main.async { [weak self] in
                         self?.armed = nil
@@ -196,19 +197,37 @@ final class HotkeyManager {
                     }
                     return nil
                 }
-                if cmd && kc == Self.kcQ {
-                    DispatchQueue.main.async { [weak self] in
-                        self?.onCloseSelectedApp?()
-                    }
-                    return nil
-                }
-                if cmd && kc == Self.kcW {
+                if cmd && shift && kc == Self.kcW {
                     DispatchQueue.main.async { [weak self] in
                         self?.onCloseSelected?()
                     }
                     return nil
                 }
-                if cmd && kc == Self.kcH {
+                if cmd && shift && kc == Self.kcQ {
+                    DispatchQueue.main.async { [weak self] in
+                        self?.onCloseSelectedApp?()
+                    }
+                    return nil
+                }
+                if cmd && shift && kc == Self.kcH {
+                    DispatchQueue.main.async { [weak self] in
+                        self?.onHideSelected?()
+                    }
+                    return nil
+                }
+                if sticky && cmd && kc == Self.kcQ {
+                    DispatchQueue.main.async { [weak self] in
+                        self?.onCloseSelectedApp?()
+                    }
+                    return nil
+                }
+                if sticky && cmd && kc == Self.kcW {
+                    DispatchQueue.main.async { [weak self] in
+                        self?.onCloseSelected?()
+                    }
+                    return nil
+                }
+                if sticky && cmd && kc == Self.kcH {
                     DispatchQueue.main.async { [weak self] in
                         self?.onHideSelected?()
                     }

@@ -113,15 +113,21 @@ struct SwitchView: View {
                 hint("←↑↓→", "navigate")
                 hint("1-9", "pick")
             }
-            hint("⌘W", "close")
-            hint("⌘Q", "quit")
-            hint("⌘H", "hide")
+            if prefs.stickyMode {
+                hint("⌘W", "close")
+                hint("⌘Q", "quit")
+                hint("⌘H", "hide")
+            } else {
+                hint("⇧⌘W", "close")
+                hint("⇧⌘Q", "quit")
+                hint("⇧⌘H", "hide")
+            }
             hint("type", "filter")
             hint("esc", "cancel")
             Spacer()
         }
         .padding(.horizontal, 22)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
         .background(Color.black.opacity(0.18))
     }
 
@@ -159,16 +165,17 @@ struct SwitchView: View {
     private func hint(_ key: String, _ label: String) -> some View {
         HStack(spacing: 5) {
             Text(key)
-                .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .tracking(1)
                 .foregroundStyle(.primary.opacity(0.85))
                 .padding(.horizontal, 5)
-                .padding(.vertical, 2)
+                .padding(.vertical, 1)
                 .background(
                     RoundedRectangle(cornerRadius: 3, style: .continuous)
                         .fill(Color.white.opacity(0.10))
                 )
             Text(label)
-                .font(.system(size: 10))
+                .font(.system(size: 11))
                 .foregroundStyle(.secondary)
         }
     }
