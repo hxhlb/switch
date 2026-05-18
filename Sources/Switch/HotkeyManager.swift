@@ -266,6 +266,12 @@ final class HotkeyManager {
         return Unmanaged.passUnretained(event)
     }
 
+    func clearArmed() {
+        armed = nil
+        armedAt = nil
+        advanced = false
+    }
+
     /// Reinstall the tap so the new HotkeyConfig is picked up. Called when bindings change.
     /// Only touches the tap — wake observers + health timer stay in place.
     func reload() {

@@ -49,6 +49,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         let commitAndDismiss: () -> Void = { [weak self] in
             self?.cancelPendingPresent()
+            self?.hotkey?.clearArmed()
             model.commit()
             window.dismiss()
         }
@@ -56,6 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.commitAndDismiss = commitAndDismiss
         let cancelAndDismiss: () -> Void = { [weak self] in
             self?.cancelPendingPresent()
+            self?.hotkey?.clearArmed()
             model.cancel()
             window.dismiss()
         }

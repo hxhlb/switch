@@ -30,10 +30,14 @@ actor WindowSnapshotter {
     }
 
     private func captureViaSCK(id: CGWindowID) async -> NSImage? {
+        if !isShareable(id) { return nil }
         do {
             let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
             guard let scWindow = content.windows.first(where: { $0.windowID == id }) else { return nil }
-            let filter = SCContentFilter(desktopIndependentWindow: scWindow)
+            var filter: SCContentFilter?
+            var reason: NSString?
+            _ = switch_try({ filter = SCContentFilter(desktopIndependentWindow: scWindow) }, &reason)
+            guard let filter else { return nil }
             let cfg = SCStreamConfiguration()
             cfg.width = max(1, Int(scWindow.frame.width))
             cfg.height = max(1, Int(scWindow.frame.height))
@@ -43,6 +47,14 @@ actor WindowSnapshotter {
         } catch {
             return nil
         }
+    }
+
+    private nonisolated func isShareable(_ id: CGWindowID) -> Bool {
+        guard let list = CGWindowListCopyWindowInfo([.optionIncludingWindow], id) as? [[String: Any]],
+              let sharing = list.first?["kCGWindowSharingType"] as? Int else {
+            return true
+        }
+        return sharing != 0
     }
 
     private nonisolated func captureViaCG(id: CGWindowID) -> NSImage? {
