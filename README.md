@@ -1,6 +1,6 @@
 # Switch
 
-A keyboard-driven window switcher for macOS.
+A keyboard-driven window switcher for macOS. Like it? [Buy me a coffee →](https://www.paypal.com/paypalme/sanyamg0)
 
 → [switch-dev.sanyamgarg.com](https://switch-dev.sanyamgarg.com)
 
@@ -47,10 +47,6 @@ Built-in. Daily background check. Settings → About → Check for Updates for m
 ## Roadmap
 
 [switch-dev.sanyamgarg.com/development](https://switch-dev.sanyamgarg.com/development/).
-
-## Support
-
-If Switch made your day easier, you can [buy me a coffee](https://www.paypal.com/paypalme/sanyamg0).
 
 ## License
 
