@@ -14,6 +14,14 @@ Or [download the latest .dmg](https://switch-dev.sanyamgarg.com).
 
 Notarized by Apple. macOS 14+. Free.
 
+## Uninstall
+
+```
+brew uninstall --cask Sanyam-G/switch/switch
+```
+
+Or quit Switch and drag `Switch.app` from `/Applications` to the Trash.
+
 ## Shortcuts
 
 - ⌘-Tab cycles all windows
