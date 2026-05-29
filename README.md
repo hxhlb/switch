@@ -56,6 +56,10 @@ Built-in. Daily background check. Settings → About → Check for Updates for m
 
 [switch-dev.sanyamgarg.com/development](https://switch-dev.sanyamgarg.com/development/).
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Sanyam-G/switch&type=Date)](https://www.star-history.com/#Sanyam-G/switch&Date)
+
 ## License
 
 [FSL-1.1-MIT](LICENSE.md). Source-available. Free for any non-competing use. Converts to MIT on May 6, 2028.
