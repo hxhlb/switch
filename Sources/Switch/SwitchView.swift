@@ -44,8 +44,8 @@ struct SwitchView: View {
 
     @ViewBuilder
     private func windowBadge(for window: WindowInfo) -> some View {
-        if window.isMinimized || window.isCrossSpace || window.isWindowless {
-            Text(window.isMinimized ? "MINIMIZED" : (window.isWindowless ? "NO WINDOWS" : (window.spaceLabel?.uppercased() ?? "OTHER SPACE")))
+        if window.isMinimized || window.isHidden || window.isCrossSpace || window.isWindowless {
+            Text(windowBadgeText(for: window))
                 .font(.system(size: 9, weight: .semibold))
                 .tracking(0.5)
                 .foregroundStyle(.white.opacity(0.85))
@@ -54,6 +54,13 @@ struct SwitchView: View {
                 .background(.ultraThinMaterial)
                 .clipShape(Capsule())
         }
+    }
+
+    private func windowBadgeText(for window: WindowInfo) -> String {
+        if window.isMinimized { return "MINIMIZED" }
+        if window.isHidden { return "HIDDEN" }
+        if window.isWindowless { return "NO WINDOWS" }
+        return window.spaceLabel?.uppercased() ?? "OTHER SPACE"
     }
 
     private var showHeader: Bool {
@@ -173,33 +180,40 @@ struct SwitchView: View {
     }
 
     private var hintStrip: some View {
-        HStack(spacing: 14) {
-            hint("↵", "switch")
+        Group {
             if prefs.verticalList {
-                hint("↑↓", "nav")
-                hint("1-9", "pick")
-                hint("type", "filter")
-                hint("esc", "cancel")
-            } else {
-                hint("←↑↓→", "navigate")
-                hint("1-9", "pick")
-                if prefs.stickyMode {
-                    hint("⌘W", "close")
-                    hint("⌘Q", "quit")
-                    hint("⌘H", "hide")
-                } else {
-                    hint("⇧⌘W", "close")
-                    hint("⇧⌘Q", "quit")
-                    hint("⇧⌘H", "hide")
+                HStack(spacing: 8) {
+                    hint("↵", "switch")
+                    compactHint("↑↓", "nav")
+                    compactHint("1-9", "pick")
+                    actionHint
+                    if prefs.typeToFilter { compactHint("type", "filter") }
+                    compactHint("esc", "cancel")
+                    Spacer(minLength: 0)
                 }
-                hint("type", "filter")
-                hint("esc", "cancel")
+            } else {
+                HStack(spacing: 14) {
+                    hint("↵", "switch")
+                    hint("←↑↓→", "navigate")
+                    hint("1-9", "pick")
+                    actionHint
+                    if prefs.typeToFilter { hint("type", "filter") }
+                    hint("esc", "cancel")
+                    Spacer()
+                }
             }
-            Spacer()
         }
         .padding(.horizontal, 22)
         .padding(.vertical, 8)
         .background(Color.black.opacity(0.18))
+    }
+
+    private var actionHint: some View {
+        hint(prefs.stickyMode ? "⌘W/Q/H" : "⇧⌘W/Q/H", "close/quit/hide")
+    }
+
+    private func compactHint(_ key: String, _ label: String) -> some View {
+        hint(key, label, showLabel: false)
     }
 
     private func stoplights(for window: WindowInfo) -> some View {
@@ -252,7 +266,7 @@ struct SwitchView: View {
         .buttonStyle(.plain)
     }
 
-    private func hint(_ key: String, _ label: String) -> some View {
+    private func hint(_ key: String, _ label: String, showLabel: Bool = true) -> some View {
         HStack(spacing: 5) {
             Text(key)
                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
@@ -264,11 +278,14 @@ struct SwitchView: View {
                     RoundedRectangle(cornerRadius: 3, style: .continuous)
                         .fill(Color.white.opacity(0.10))
                 )
-            Text(label)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+            if showLabel {
+                Text(label)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
         }
         .fixedSize()
+        .help(label)
     }
 
     private var gridColumns: [GridItem] {

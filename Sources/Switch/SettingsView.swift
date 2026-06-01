@@ -156,7 +156,7 @@ struct SettingsView: View {
                                 .foregroundStyle(.red)
                         }
                         HStack {
-                            Text("Type to filter · ⌘W close · ⌘Q quit · ⌘H hide · ⇧ reverse")
+                            Text("Sticky: ⌘W/Q/H · Hold: ⇧⌘W/Q/H · ⇧ reverse")
                                 .font(.system(size: 11))
                                 .foregroundStyle(.secondary)
                             Spacer()
@@ -191,6 +191,13 @@ struct SettingsView: View {
                         row(title: "Keyboard only",
                             detail: "Ignore mouse hover and click while the picker is open.") {
                             Toggle("", isOn: $prefs.disableMouse)
+                                .labelsHidden().toggleStyle(.switch)
+                                .tint(prefs.accent.color)
+                        }
+                        Divider().opacity(0.4)
+                        row(title: "Type to filter",
+                            detail: "Filter windows by typing while the picker is open.") {
+                            Toggle("", isOn: $prefs.typeToFilter)
                                 .labelsHidden().toggleStyle(.switch)
                                 .tint(prefs.accent.color)
                         }

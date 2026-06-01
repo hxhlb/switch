@@ -96,6 +96,10 @@ final class SwitchPreferences: ObservableObject {
         didSet { UserDefaults.standard.set(showHintStrip, forKey: SwitchPreferences.showHintStripKey) }
     }
 
+    @Published var typeToFilter: Bool {
+        didSet { UserDefaults.standard.set(typeToFilter, forKey: SwitchPreferences.typeToFilterKey) }
+    }
+
     @Published var thumbnailHeight: Double {
         didSet { UserDefaults.standard.set(thumbnailHeight, forKey: SwitchPreferences.thumbnailHeightKey) }
     }
@@ -127,6 +131,7 @@ final class SwitchPreferences: ObservableObject {
     nonisolated static let verticalShowPreviewKey = "switch.verticalShowPreview"
     nonisolated static let verticalShowHeaderKey = "switch.verticalShowHeader"
     nonisolated static let showHintStripKey = "switch.showHintStrip"
+    nonisolated static let typeToFilterKey = "switch.typeToFilter"
     nonisolated static let thumbnailHeightKey = "switch.thumbnailHeight"
     nonisolated static let appIconSizeKey = "switch.appIconSize"
     nonisolated static let gridColumnsKey = "switch.gridColumns"
@@ -148,6 +153,7 @@ final class SwitchPreferences: ObservableObject {
         verticalShowPreview = (UserDefaults.standard.object(forKey: SwitchPreferences.verticalShowPreviewKey) as? Bool) ?? true
         verticalShowHeader = (UserDefaults.standard.object(forKey: SwitchPreferences.verticalShowHeaderKey) as? Bool) ?? true
         showHintStrip = (UserDefaults.standard.object(forKey: SwitchPreferences.showHintStripKey) as? Bool) ?? true
+        typeToFilter = (UserDefaults.standard.object(forKey: SwitchPreferences.typeToFilterKey) as? Bool) ?? true
         thumbnailHeight = (UserDefaults.standard.object(forKey: SwitchPreferences.thumbnailHeightKey) as? Double) ?? Self.defaultThumbnailHeight
         appIconSize = (UserDefaults.standard.object(forKey: SwitchPreferences.appIconSizeKey) as? Double) ?? Self.defaultAppIconSize
         gridColumns = (UserDefaults.standard.object(forKey: SwitchPreferences.gridColumnsKey) as? Int) ?? Self.defaultGridColumns

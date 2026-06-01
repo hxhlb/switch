@@ -85,13 +85,10 @@ final class SwitchModel: ObservableObject {
         }
         var final = ws
         if SwitchPreferences.shared.includeWindowlessApps && mode == .allWindows {
-            let livePIDs: Set<pid_t> = {
-                guard let list = CGWindowListCopyWindowInfo([.optionAll, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else { return [] }
-                return Set(list.compactMap { ($0[kCGWindowOwnerPID as String] as? pid_t) })
-            }()
+            let switchablePIDs = Set(final.map { $0.pid })
             let ownBundle = Bundle.main.bundleIdentifier
             let extras = NSWorkspace.shared.runningApplications
-                .filter { $0.activationPolicy == .regular && !livePIDs.contains($0.processIdentifier) && $0.bundleIdentifier != ownBundle }
+                .filter { $0.activationPolicy == .regular && !switchablePIDs.contains($0.processIdentifier) && $0.bundleIdentifier != ownBundle }
                 .sorted { ($0.localizedName ?? "") < ($1.localizedName ?? "") }
                 .map { app in
                     WindowInfo(

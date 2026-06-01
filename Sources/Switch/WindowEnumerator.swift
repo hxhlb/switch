@@ -10,6 +10,7 @@ struct WindowInfo: Identifiable, Hashable {
     let bounds: CGRect
     var isCrossSpace: Bool = false
     var isMinimized: Bool = false
+    var isHidden: Bool = false
     var spaceLabel: String?
     var isWindowless: Bool = false
     var bundleID: String?
@@ -87,14 +88,20 @@ enum WindowEnumerator {
         let cid = CGSMainConnectionID()
         let labels = spaceLabels(cid: cid)
         return candidates.compactMap { w in
-            let arr = [NSNumber(value: w.id)] as CFArray
-            let spaces = CGSCopySpacesForWindows(cid, 7, arr)?.takeRetainedValue() as? [Int] ?? []
-            if spaces.isEmpty { return nil }
             var out = w
+            if out.isHidden {
+                out.isCrossSpace = false
+                return out
+            }
             if minimizedIDs.contains(w.id) {
                 out.isMinimized = true
                 out.isCrossSpace = false
-            } else if let sid = spaces.first {
+                return out
+            }
+            let arr = [NSNumber(value: w.id)] as CFArray
+            let spaces = CGSCopySpacesForWindows(cid, 7, arr)?.takeRetainedValue() as? [Int] ?? []
+            if spaces.isEmpty { return nil }
+            if let sid = spaces.first {
                 out.spaceLabel = labels[sid]
             }
             return out
@@ -140,7 +147,7 @@ enum WindowEnumerator {
         for d in raw {
             let appName = d[kCGWindowOwnerName as String] as? String ?? ""
             guard let layer = d[kCGWindowLayer as String] as? Int, layer == 0 else { continue }
-            guard let alpha = d[kCGWindowAlpha as String] as? Double, alpha > 0 else { continue }
+            guard let alpha = d[kCGWindowAlpha as String] as? Double else { continue }
             guard let id = d[kCGWindowNumber as String] as? CGWindowID else { continue }
             guard let pid = d[kCGWindowOwnerPID as String] as? pid_t else { continue }
             if skipApps.contains(appName) { continue }
@@ -148,6 +155,7 @@ enum WindowEnumerator {
             if blockedPIDs.contains(pid) { continue }
             let app = NSRunningApplication(processIdentifier: pid)
             if app == nil || app?.activationPolicy == .prohibited { continue }
+            if alpha <= 0 && app?.isHidden != true { continue }
             let title = d[kCGWindowName as String] as? String ?? ""
             let boundsDict = d[kCGWindowBounds as String] as? [String: CGFloat] ?? [:]
             let bounds = CGRect(
@@ -164,7 +172,15 @@ enum WindowEnumerator {
             if seenIDs.contains(id) { continue }
             seenIDs.insert(id)
             if scope == .currentApp, let f = frontmostPID, pid != f { continue }
-            out.append(WindowInfo(id: id, pid: pid, appName: appName, title: title, bounds: bounds, bundleID: app?.bundleIdentifier))
+            out.append(WindowInfo(
+                id: id,
+                pid: pid,
+                appName: appName,
+                title: title,
+                bounds: bounds,
+                isHidden: app?.isHidden == true,
+                bundleID: app?.bundleIdentifier
+            ))
         }
         return out
     }

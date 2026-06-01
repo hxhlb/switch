@@ -11,6 +11,7 @@ enum WindowFocuser {
     static func focus(_ window: WindowInfo) {
         if window.isWindowless {
             let app = NSRunningApplication(processIdentifier: window.pid)
+            if app?.isHidden == true { app?.unhide() }
             if let url = app?.bundleURL {
                 let config = NSWorkspace.OpenConfiguration()
                 config.activates = true

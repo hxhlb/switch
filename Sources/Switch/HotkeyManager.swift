@@ -179,6 +179,7 @@ final class HotkeyManager {
 
             if armed != nil {
                 let sticky = UserDefaults.standard.bool(forKey: SwitchPreferences.stickyModeKey)
+                let typeToFilter = (UserDefaults.standard.object(forKey: SwitchPreferences.typeToFilterKey) as? Bool) ?? true
                 if kc == Self.kcEscape {
                     DispatchQueue.main.async { [weak self] in
                         self?.armed = nil
@@ -193,7 +194,7 @@ final class HotkeyManager {
                     }
                     return nil
                 }
-                if kc == Self.kcDelete {
+                if typeToFilter && kc == Self.kcDelete {
                     DispatchQueue.main.async { [weak self] in
                         self?.onFilterBackspace?()
                     }
@@ -257,7 +258,7 @@ final class HotkeyManager {
                     }
                     return nil
                 }
-                if let c = filterChar(from: event) {
+                if typeToFilter, let c = filterChar(from: event) {
                     DispatchQueue.main.async { [weak self] in
                         self?.onFilterAppend?(c)
                     }
