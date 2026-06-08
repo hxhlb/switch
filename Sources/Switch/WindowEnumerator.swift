@@ -48,22 +48,32 @@ enum WindowEnumerator {
         return e.activeSpace + e.crossSpace
     }
 
+    static func windowOwningPIDs(scope: HotkeyManager.Mode, frontmostPID: pid_t?) -> Set<pid_t> {
+        let activeSpace = enumerate(option: [.optionOnScreenOnly, .excludeDesktopElements], scope: scope, frontmostPID: frontmostPID)
+        let activeIDs = Set(activeSpace.map { $0.id })
+        let everything = enumerate(option: [.optionAll, .excludeDesktopElements], scope: scope, frontmostPID: frontmostPID)
+        let crossSpace = everything
+            .filter { !activeIDs.contains($0.id) }
+            .map { var w = $0; w.isCrossSpace = true; return w }
+        let realCrossSpace = annotateAndPrune(crossSpace)
+        return Set((activeSpace + realCrossSpace).map { $0.pid })
+    }
+
     static func enumerate(scope: HotkeyManager.Mode, frontmostPID: pid_t?) -> Enumeration {
         let activeSpace = enumerate(option: [.optionOnScreenOnly, .excludeDesktopElements], scope: scope, frontmostPID: frontmostPID)
 
         // UserDefaults read direct — SwitchPreferences is @MainActor and this
         // static func runs from prewarm background queues.
         let showCross = (UserDefaults.standard.object(forKey: "switch.showCrossSpace") as? Bool) ?? true
-        guard showCross else {
-            return Enumeration(activeSpace: activeSpace, crossSpace: [])
-        }
-
         let everything = enumerate(option: [.optionAll, .excludeDesktopElements], scope: scope, frontmostPID: frontmostPID)
         let activeIDs = Set(activeSpace.map { $0.id })
         let crossSpace = everything
             .filter { !activeIDs.contains($0.id) }
             .map { var w = $0; w.isCrossSpace = true; return w }
         let annotated = annotateAndPrune(crossSpace)
+        guard showCross else {
+            return Enumeration(activeSpace: activeSpace, crossSpace: annotated.filter { !$0.isCrossSpace })
+        }
         return Enumeration(activeSpace: activeSpace, crossSpace: annotated)
     }
 

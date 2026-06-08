@@ -85,7 +85,7 @@ final class SwitchModel: ObservableObject {
         }
         var final = ws
         if SwitchPreferences.shared.includeWindowlessApps && mode == .allWindows {
-            let switchablePIDs = Set(final.map { $0.pid })
+            let switchablePIDs = WindowEnumerator.windowOwningPIDs(scope: mode, frontmostPID: frontmostPID)
             let ownBundle = Bundle.main.bundleIdentifier
             let extras = NSWorkspace.shared.runningApplications
                 .filter { $0.activationPolicy == .regular && !switchablePIDs.contains($0.processIdentifier) && $0.bundleIdentifier != ownBundle }
@@ -168,8 +168,6 @@ final class SwitchModel: ObservableObject {
         refreshTimer = nil
     }
 
-    /// Background snapshot pre-warm. Runs every 3s while the panel is hidden, populating
-    /// the WindowSnapshotter cache so the next ⌘-Tab opens with thumbs already drawn.
     private func startPrewarmTimer() {
         prewarmTimer?.invalidate()
         prewarmTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in

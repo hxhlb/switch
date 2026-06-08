@@ -134,7 +134,7 @@ struct SwitchView: View {
                                 }
                             }
                             .padding(.horizontal, 14)
-                            .padding(.top, showHeader ? 0 : 14)
+                            .padding(.top, showHeader ? 10 : 14)
                             .padding(.bottom, 10)
                         } else {
                             LazyVGrid(columns: gridColumns, spacing: 14) {
@@ -209,7 +209,11 @@ struct SwitchView: View {
     }
 
     private var actionHint: some View {
-        hint(prefs.stickyMode ? "⌘W/Q/H" : "⇧⌘W/Q/H", "close/quit/hide")
+        hint(actionHintKey, "close/quit/hide")
+    }
+
+    private var actionHintKey: String {
+        (prefs.stickyMode || !prefs.typeToFilter) ? "⌘W/Q/H" : "⇧⌘W/Q/H"
     }
 
     private func compactHint(_ key: String, _ label: String) -> some View {

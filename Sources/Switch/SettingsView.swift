@@ -196,7 +196,7 @@ struct SettingsView: View {
                         }
                         Divider().opacity(0.4)
                         row(title: "Type to filter",
-                            detail: "Filter windows by typing while the picker is open.") {
+                            detail: "Filter windows by typing while the picker is open. When disabled, ⌘W/⌘Q/⌘H work directly.") {
                             Toggle("", isOn: $prefs.typeToFilter)
                                 .labelsHidden().toggleStyle(.switch)
                                 .tint(prefs.accent.color)
