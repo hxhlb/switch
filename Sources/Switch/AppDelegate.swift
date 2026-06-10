@@ -27,6 +27,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotkeyStarted = false
     private var focusTrackerStarted = false
     private var permsTimer: Timer?
+    private var armedWatchdog: Timer?
+    private var clickAwayMonitor: Any?
     private var pendingPresent: DispatchWorkItem?
     private var cancellables: Set<AnyCancellable> = []
     private static let quickFlipWindow: TimeInterval = 0.13
@@ -158,6 +160,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if AXIsProcessTrusted() && CGPreflightScreenCaptureAccess() {
                 self.startHotkeyIfNeeded()
                 self.startFocusTrackerIfNeeded()
+            }
+        }
+
+        // Watchdog: armed with no panel visible and none pending means the tap
+        // is consuming keystrokes for a picker that doesn't exist (the "keyboard
+        // stops working until Switch quits" report). Clear it.
+        armedWatchdog = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, let hotkey = self.hotkey, let model = self.model else { return }
+                if hotkey.isArmed && !model.visible && self.pendingPresent == nil {
+                    hotkey.clearArmed()
+                }
+            }
+        }
+
+        // A click in another app while the picker floats (sticky mode) should
+        // dismiss it; otherwise the panel lingers and the tap keeps eating keys.
+        // Global monitors never see events routed to our own panel.
+        clickAwayMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown]
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.model?.visible == true else { return }
+                cancelAndDismiss()
             }
         }
     }

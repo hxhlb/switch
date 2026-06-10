@@ -273,6 +273,9 @@ final class HotkeyManager {
         return Unmanaged.passUnretained(event)
     }
 
+    /// Main-thread only (all mutations of `armed` happen on main).
+    var isArmed: Bool { armed != nil }
+
     func clearArmed() {
         armed = nil
         armedAt = nil
