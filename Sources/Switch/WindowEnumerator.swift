@@ -12,6 +12,7 @@ struct WindowInfo: Identifiable, Hashable {
     var isMinimized: Bool = false
     var isHidden: Bool = false
     var spaceLabel: String?
+    var isFullscreenSpace: Bool = false
     var isWindowless: Bool = false
     var bundleID: String?
 }
@@ -21,7 +22,7 @@ enum WindowEnumerator {
         "Window Server", "Dock", "SystemUIServer", "Control Center",
         "Notification Center", "Spotlight", "WallpaperAgent", "Switch",
         "loginwindow", "talagent", "TextInputMenuAgent", "TextInputSwitcher",
-        "universalControl", "ControlStrip", "ScreenshotCapture"
+        "universalControl", "ControlStrip", "ScreenshotCapture", "WindowManager"
     ]
 
     private static let helperSuffixes: [String] = [
@@ -79,6 +80,7 @@ enum WindowEnumerator {
 
     private static func annotateAndPrune(_ candidates: [WindowInfo]) -> [WindowInfo] {
         var minimizedIDs: Set<CGWindowID> = []
+        var axBackedIDs: Set<CGWindowID> = []
         for pid in Set(candidates.map { $0.pid }) {
             let appAX = AXUIElementCreateApplication(pid)
             var ref: CFTypeRef?
@@ -87,6 +89,7 @@ enum WindowEnumerator {
             for ax in axWindows {
                 var id: CGWindowID = 0
                 if _AXUIElementGetWindow(ax, &id) == .success, id != 0 {
+                    axBackedIDs.insert(id)
                     var minRef: CFTypeRef?
                     if AXUIElementCopyAttributeValue(ax, kAXMinimizedAttribute as CFString, &minRef) == .success,
                        let isMin = minRef as? Bool, isMin {
@@ -110,18 +113,28 @@ enum WindowEnumerator {
             }
             let arr = [NSNumber(value: w.id)] as CFArray
             let spaces = CGSCopySpacesForWindows(cid, 7, arr)?.takeRetainedValue() as? [Int] ?? []
-            if spaces.isEmpty { return nil }
+            if spaces.isEmpty {
+                // Empty Space list + no AX window = orderOut'd ghost, drop it.
+                // Empty Space list + live AX window = a real window the window
+                // server has ordered out (Stage Manager off-stage). It's on the
+                // current Space, so it survives the cross-space toggle.
+                guard axBackedIDs.contains(w.id) else { return nil }
+                out.isCrossSpace = false
+                return out
+            }
             if let sid = spaces.first {
-                out.spaceLabel = labels[sid]
+                let info = labels[sid]
+                out.spaceLabel = info?.label
+                out.isFullscreenSpace = info?.isFullscreen ?? false
             }
             return out
         }
     }
 
     /// Builds a `spaceID → "Desktop N" / "Fullscreen"` map by walking CGS's managed-display spaces in order.
-    private static func spaceLabels(cid: CGSConnectionID) -> [Int: String] {
+    private static func spaceLabels(cid: CGSConnectionID) -> [Int: (label: String, isFullscreen: Bool)] {
         guard let displays = CGSCopyManagedDisplaySpaces(cid)?.takeRetainedValue() as? [[String: Any]] else { return [:] }
-        var out: [Int: String] = [:]
+        var out: [Int: (label: String, isFullscreen: Bool)] = [:]
         var desktop = 0
         for display in displays {
             guard let spaces = display["Spaces"] as? [[String: Any]] else { continue }
@@ -130,9 +143,9 @@ enum WindowEnumerator {
                 let type = space["type"] as? Int ?? 0
                 if type == 0 {
                     desktop += 1
-                    out[id] = "Desktop \(desktop)"
+                    out[id] = ("Desktop \(desktop)", false)
                 } else {
-                    out[id] = "Fullscreen"
+                    out[id] = ("Fullscreen", true)
                 }
             }
         }
