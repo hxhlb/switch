@@ -7,6 +7,28 @@ actor WindowSnapshotter {
 
     private var cache: [CGWindowID: NSImage] = [:]
     private var inFlight: Set<CGWindowID> = []
+    private var shareableContent: SCShareableContent?
+    private var shareableContentAt: Date = .distantPast
+    private var shareableContentTask: Task<SCShareableContent?, Never>?
+
+    /// One SCShareableContent enumeration per second, shared across every
+    /// concurrent snapshot call. Per-window fetches were N full enumerations
+    /// per refresh tick.
+    private func currentShareableContent() async -> SCShareableContent? {
+        if let c = shareableContent, Date().timeIntervalSince(shareableContentAt) < 1.0 { return c }
+        if let task = shareableContentTask { return await task.value }
+        let task = Task<SCShareableContent?, Never> {
+            try? await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
+        }
+        shareableContentTask = task
+        let c = await task.value
+        shareableContentTask = nil
+        if let c {
+            shareableContent = c
+            shareableContentAt = Date()
+        }
+        return c
+    }
 
     func snapshot(for id: CGWindowID, force: Bool = false) async -> NSImage? {
         if !force, let img = cache[id] { return img }
@@ -37,8 +59,8 @@ actor WindowSnapshotter {
     private func captureViaSCK(id: CGWindowID) async -> NSImage? {
         if !isShareable(id) { return nil }
         do {
-            let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
-            guard let scWindow = content.windows.first(where: { $0.windowID == id }) else { return nil }
+            guard let content = await currentShareableContent(),
+                  let scWindow = content.windows.first(where: { $0.windowID == id }) else { return nil }
             var filter: SCContentFilter?
             var reason: NSString?
             _ = switch_try({ filter = SCContentFilter(desktopIndependentWindow: scWindow) }, &reason)
