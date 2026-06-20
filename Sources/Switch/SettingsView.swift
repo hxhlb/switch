@@ -8,6 +8,7 @@ final class SettingsModel: ObservableObject {
     @Published var launchAtLogin: Bool = false
     @Published var allWindows: HotkeyBinding = HotkeyConfig.shared.allWindows
     @Published var currentApp: HotkeyBinding = HotkeyConfig.shared.currentApp
+    @Published var spaces: HotkeyBinding = HotkeyConfig.shared.spaces
     @Published var stickyToggle: HotkeyBinding? = HotkeyConfig.shared.stickyToggle
 
     init() { refresh() }
@@ -18,6 +19,7 @@ final class SettingsModel: ObservableObject {
         }
         allWindows = HotkeyConfig.shared.allWindows
         currentApp = HotkeyConfig.shared.currentApp
+        spaces = HotkeyConfig.shared.spaces
         stickyToggle = HotkeyConfig.shared.stickyToggle
     }
 
@@ -45,6 +47,11 @@ final class SettingsModel: ObservableObject {
     func updateCurrentApp(_ b: HotkeyBinding) {
         HotkeyConfig.shared.currentApp = b
         currentApp = b
+    }
+
+    func updateSpaces(_ b: HotkeyBinding) {
+        HotkeyConfig.shared.spaces = b
+        spaces = b
     }
 
     func updateStickyToggle(_ b: HotkeyBinding?) {
@@ -149,6 +156,9 @@ struct SettingsView: View {
                         hotkeyRow(label: "Current app", binding: model.currentApp) { b in
                             apply(b) { model.updateCurrentApp($0) }
                         }
+                        hotkeyRow(label: "Spaces", binding: model.spaces) { b in
+                            apply(b) { model.updateSpaces($0) }
+                        }
                         stickyToggleRow
                         if let msg = rejectMessage {
                             Text(msg)
@@ -195,6 +205,13 @@ struct SettingsView: View {
                                 .tint(prefs.accent.color)
                         }
                         Divider().opacity(0.4)
+                        row(title: "Hide menu bar icon",
+                            detail: "Keep Switch off the menu bar. Open Settings from the picker with ⌘,") {
+                            Toggle("", isOn: $prefs.hideMenuBarIcon)
+                                .labelsHidden().toggleStyle(.switch)
+                                .tint(prefs.accent.color)
+                        }
+                        Divider().opacity(0.4)
                         row(title: "Type to filter",
                             detail: "Filter windows by typing while the picker is open. When disabled, ⌘W/⌘Q/⌘H work directly.") {
                             Toggle("", isOn: $prefs.typeToFilter)
@@ -216,6 +233,13 @@ struct SettingsView: View {
                         row(title: "Include apps with no windows",
                             detail: "Show running Dock apps that don't currently have any windows. Picking one activates the app.") {
                             Toggle("", isOn: $prefs.includeWindowlessApps)
+                                .labelsHidden().toggleStyle(.switch)
+                                .tint(prefs.accent.color)
+                        }
+                        Divider().opacity(0.4)
+                        row(title: "Show thumbnails",
+                            detail: "Capture window previews. Turn off to run without Screen Recording.") {
+                            Toggle("", isOn: $prefs.showThumbnails)
                                 .labelsHidden().toggleStyle(.switch)
                                 .tint(prefs.accent.color)
                         }
@@ -304,27 +328,31 @@ struct SettingsView: View {
                     }
                 }
 
-                section("Cross-Space") {
-                    VStack(spacing: 0) {
-                        row(title: "Show cross-Space windows",
-                            detail: "Include windows on other Spaces. Picking one moves it to your current Space.") {
-                            Toggle("", isOn: $prefs.showCrossSpace)
-                                .labelsHidden().toggleStyle(.switch)
-                                .tint(prefs.accent.color)
-                        }
-                        Divider().opacity(0.4)
-                        row(title: "Mix by recent use",
-                            detail: "Sort all windows together by recency instead of grouping by Space.") {
-                            Toggle("", isOn: $prefs.mruMixSpaces)
-                                .labelsHidden().toggleStyle(.switch)
-                                .tint(prefs.accent.color)
-                        }
-                    }
-                }
+                crossSpaceSection
 
                 blacklistSection
             }
             .padding(24)
+        }
+    }
+
+    private var crossSpaceSection: some View {
+        section("Cross-Space") {
+            VStack(spacing: 0) {
+                row(title: "Show cross-Space windows",
+                    detail: "Include windows on other Spaces. Picking one moves it to your current Space.") {
+                    Toggle("", isOn: $prefs.showCrossSpace)
+                        .labelsHidden().toggleStyle(.switch)
+                        .tint(prefs.accent.color)
+                }
+                Divider().opacity(0.4)
+                row(title: "Mix by recent use",
+                    detail: "Sort all windows together by recency instead of grouping by Space.") {
+                    Toggle("", isOn: $prefs.mruMixSpaces)
+                        .labelsHidden().toggleStyle(.switch)
+                        .tint(prefs.accent.color)
+                }
+            }
         }
     }
 
@@ -643,7 +671,7 @@ struct PermissionsTabView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                Text("Switch needs Accessibility for the ⌘-Tab hotkey and Screen Recording for window thumbnails. Both are macOS privacy gates.")
+                Text("Switch needs Accessibility for the ⌘-Tab hotkey. Screen Recording is only needed when thumbnails are enabled.")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
 
@@ -655,7 +683,7 @@ struct PermissionsTabView: View {
                 )
                 permRow(
                     title: "Screen Recording",
-                    detail: "Capture live thumbnails of every window.",
+                    detail: SwitchPreferences.shared.showThumbnails ? "Capture live thumbnails of every window." : "Optional while thumbnails are disabled.",
                     granted: perms.screenCapture,
                     action: { perms.openScreenCapture() }
                 )

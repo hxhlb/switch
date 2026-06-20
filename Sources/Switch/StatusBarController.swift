@@ -1,5 +1,6 @@
 import AppKit
 
+@MainActor
 final class StatusBarController {
     private let item: NSStatusItem
 
@@ -35,6 +36,11 @@ final class StatusBarController {
         menu.addItem(quit)
 
         item.menu = menu
+        setHidden(SwitchPreferences.shared.hideMenuBarIcon)
+    }
+
+    func setHidden(_ hidden: Bool) {
+        item.isVisible = !hidden
     }
 
     @objc private func showOnboarding() {

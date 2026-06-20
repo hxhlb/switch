@@ -8,6 +8,7 @@ struct WindowInfo: Identifiable, Hashable {
     let appName: String
     let title: String
     let bounds: CGRect
+    var spaceID: Int?
     var isCrossSpace: Bool = false
     var isMinimized: Bool = false
     var isHidden: Bool = false
@@ -47,6 +48,39 @@ enum WindowEnumerator {
     static func currentWindows(scope: HotkeyManager.Mode, frontmostPID: pid_t?) -> [WindowInfo] {
         let e = enumerate(scope: scope, frontmostPID: frontmostPID)
         return e.activeSpace + e.crossSpace
+    }
+
+    static func spaceRepresentatives(frontmostPID: pid_t?) -> [WindowInfo] {
+        let all = enumerate(option: [.optionAll, .excludeDesktopElements], scope: .allWindows, frontmostPID: frontmostPID)
+        let annotated = annotateAndPrune(all)
+        let cid = CGSMainConnectionID()
+        let active = Int(CGSGetActiveSpace(cid))
+        let metadata = spaceMetadata(cid: cid)
+        let grouped = Dictionary(grouping: annotated) { $0.spaceID ?? -1 }
+        return metadata.order.compactMap { sid in
+            guard sid != -1, let windows = grouped[sid], !windows.isEmpty else { return nil }
+            let sorted = WindowMRU.sorted(windows, frontmost: nil)
+            guard let target = sorted.first else { return nil }
+            let apps = Array(NSOrderedSet(array: sorted.map(\.appName)).compactMap { $0 as? String }).prefix(3)
+            let suffix = sorted.count == 1 ? "1 window" : "\(sorted.count) windows"
+            let detail = apps.isEmpty ? suffix : "\(suffix) · \(apps.joined(separator: ", "))"
+            let info = metadata.labels[sid]
+            return WindowInfo(
+                id: target.id,
+                pid: target.pid,
+                appName: info?.label ?? "Desktop",
+                title: detail,
+                bounds: target.bounds,
+                spaceID: sid,
+                isCrossSpace: sid != active,
+                isMinimized: false,
+                isHidden: false,
+                spaceLabel: sid == active ? "Current" : nil,
+                isFullscreenSpace: info?.isFullscreen ?? false,
+                isWindowless: false,
+                bundleID: target.bundleID
+            )
+        }
     }
 
     static func windowOwningPIDs(scope: HotkeyManager.Mode, frontmostPID: pid_t?) -> Set<pid_t> {
@@ -99,7 +133,7 @@ enum WindowEnumerator {
             }
         }
         let cid = CGSMainConnectionID()
-        let labels = spaceLabels(cid: cid)
+        let metadata = spaceMetadata(cid: cid)
         return candidates.compactMap { w in
             var out = w
             if out.isHidden {
@@ -123,7 +157,8 @@ enum WindowEnumerator {
                 return out
             }
             if let sid = spaces.first {
-                let info = labels[sid]
+                let info = metadata.labels[sid]
+                out.spaceID = sid
                 out.spaceLabel = info?.label
                 out.isFullscreenSpace = info?.isFullscreen ?? false
             }
@@ -132,24 +167,26 @@ enum WindowEnumerator {
     }
 
     /// Builds a `spaceID → "Desktop N" / "Fullscreen"` map by walking CGS's managed-display spaces in order.
-    private static func spaceLabels(cid: CGSConnectionID) -> [Int: (label: String, isFullscreen: Bool)] {
-        guard let displays = CGSCopyManagedDisplaySpaces(cid)?.takeRetainedValue() as? [[String: Any]] else { return [:] }
-        var out: [Int: (label: String, isFullscreen: Bool)] = [:]
+    private static func spaceMetadata(cid: CGSConnectionID) -> (labels: [Int: (label: String, isFullscreen: Bool)], order: [Int]) {
+        guard let displays = CGSCopyManagedDisplaySpaces(cid)?.takeRetainedValue() as? [[String: Any]] else { return ([:], []) }
+        var labels: [Int: (label: String, isFullscreen: Bool)] = [:]
+        var order: [Int] = []
         var desktop = 0
         for display in displays {
             guard let spaces = display["Spaces"] as? [[String: Any]] else { continue }
             for space in spaces {
                 guard let id = space["id64"] as? Int else { continue }
+                order.append(id)
                 let type = space["type"] as? Int ?? 0
                 if type == 0 {
                     desktop += 1
-                    out[id] = ("Desktop \(desktop)", false)
+                    labels[id] = ("Desktop \(desktop)", false)
                 } else {
-                    out[id] = ("Fullscreen", true)
+                    labels[id] = ("Fullscreen", true)
                 }
             }
         }
-        return out
+        return (labels, order)
     }
 
     private static func enumerate(option: CGWindowListOption, scope: HotkeyManager.Mode, frontmostPID: pid_t?) -> [WindowInfo] {
@@ -177,7 +214,7 @@ enum WindowEnumerator {
             if isHelperProcess(appName) { continue }
             if blockedPIDs.contains(pid) { continue }
             let app = NSRunningApplication(processIdentifier: pid)
-            if app == nil || app?.activationPolicy == .prohibited { continue }
+            if app == nil || app?.activationPolicy != .regular { continue }
             if alpha <= 0 && app?.isHidden != true { continue }
             let title = d[kCGWindowName as String] as? String ?? ""
             let boundsDict = d[kCGWindowBounds as String] as? [String: CGFloat] ?? [:]

@@ -55,6 +55,29 @@ final class SwitchModel: ObservableObject {
         self.mode = mode
         filterText = ""
         let frontmostPID = NSWorkspace.shared.frontmostApplication?.processIdentifier
+        if mode == .spaces {
+            let final = WindowEnumerator.spaceRepresentatives(frontmostPID: frontmostPID)
+            windows = final
+            if let current = final.firstIndex(where: { !$0.isCrossSpace }), final.count > 1 {
+                selected = (current + 1) % final.count
+            } else {
+                selected = 0
+            }
+            visible = true
+            let liveIDs = Set(final.map { $0.id })
+            Task {
+                if SwitchPreferences.shared.showThumbnails, #available(macOS 14.0, *) {
+                    await WindowSnapshotter.shared.purge(keeping: liveIDs)
+                }
+                await fetchThumbnails(for: final, force: false)
+            }
+            startRefreshTimer()
+            if !hasArmedOnce {
+                hasArmedOnce = true
+                startPrewarmTimer()
+            }
+            return
+        }
         // FocusTracker keeps WindowMRU current across all focus events (Switch-driven
         // and external clicks). MRU-sort active-Space too so that when an Arc window
         // is raised, all OTHER Arc windows don't cluster ahead of the previously-focused
@@ -122,7 +145,7 @@ final class SwitchModel: ObservableObject {
             AXWindowCache.capture(pids: capturePIDs)
         }
         Task {
-            if #available(macOS 14.0, *) {
+            if SwitchPreferences.shared.showThumbnails, #available(macOS 14.0, *) {
                 // Don't full-purge — pre-warmed thumbs are valid as long as the window still exists.
                 await WindowSnapshotter.shared.purge(keeping: liveIDs)
             }
@@ -142,6 +165,7 @@ final class SwitchModel: ObservableObject {
     }
 
     func close(_ target: WindowInfo) {
+        guard mode != .spaces else { return }
         WindowCloser.close(target)
         windows.removeAll { $0.id == target.id }
         thumbnails[target.id] = nil
@@ -160,9 +184,10 @@ final class SwitchModel: ObservableObject {
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 guard let self else { return }
+                guard SwitchPreferences.shared.showThumbnails else { return }
                 let ws = self.windows
                 guard !ws.isEmpty, self.visible else { return }
-                await self.fetchThumbnails(for: ws, force: true)
+                await self.fetchThumbnails(for: ws, force: self.mode != .spaces)
             }
         }
     }
@@ -184,7 +209,6 @@ final class SwitchModel: ObservableObject {
     }
 
     private func prewarmCache() async {
-        guard #available(macOS 14.0, *) else { return }
         let frontmost = NSWorkspace.shared.frontmostApplication?.processIdentifier
         let ws = WindowEnumerator.currentWindows(scope: .allWindows, frontmostPID: frontmost)
         let liveIDs = Set(ws.map { $0.id })
@@ -196,6 +220,7 @@ final class SwitchModel: ObservableObject {
             AXWindowCache.purgeDead()
             AXWindowCache.capture(pids: capturePIDs)
         }
+        guard SwitchPreferences.shared.showThumbnails, #available(macOS 14.0, *) else { return }
         await WindowSnapshotter.shared.purge(keeping: liveIDs)
         await withTaskGroup(of: Void.self) { group in
             for w in ws {
@@ -242,6 +267,7 @@ final class SwitchModel: ObservableObject {
     }
 
     func closeSelectedApp() {
+        guard mode != .spaces else { return }
         let list = filteredWindows
         guard list.indices.contains(selected) else { return }
         AppCloser.close(list[selected])
@@ -249,6 +275,7 @@ final class SwitchModel: ObservableObject {
     }
 
     func hideSelected() {
+        guard mode != .spaces else { return }
         let list = filteredWindows
         guard list.indices.contains(selected) else { return }
         let target = list[selected]
@@ -290,6 +317,10 @@ final class SwitchModel: ObservableObject {
     }
 
     private func fetchThumbnails(for windows: [WindowInfo], force: Bool) async {
+        guard SwitchPreferences.shared.showThumbnails else {
+            thumbnails = [:]
+            return
+        }
         if #available(macOS 14.0, *) {
             await withTaskGroup(of: (CGWindowID, NSImage?).self) { group in
                 for w in windows {

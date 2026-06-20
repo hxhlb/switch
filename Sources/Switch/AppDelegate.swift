@@ -121,6 +121,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .dropFirst()
             .sink { [weak window] _ in window?.applyContentSize() }
             .store(in: &cancellables)
+        SwitchPreferences.shared.$showThumbnails
+            .dropFirst()
+            .sink { [weak self, weak window] enabled in
+                window?.applyContentSize()
+                if enabled && CGPreflightScreenCaptureAccess() == false {
+                    self?.showOnboarding()
+                } else if self?.requiredPermissionsGranted == true {
+                    self?.startHotkeyIfNeeded()
+                    self?.startFocusTrackerIfNeeded()
+                }
+            }
+            .store(in: &cancellables)
+        SwitchPreferences.shared.$hideMenuBarIcon
+            .dropFirst()
+            .sink { [weak self] hidden in
+                self?.statusBar?.setHidden(hidden)
+            }
+            .store(in: &cancellables)
         model.$visible
             .dropFirst()
             .filter { !$0 }
@@ -152,8 +170,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Show onboarding if any permission is missing; otherwise install the tap.
-        let needs = !AXIsProcessTrusted() || (CGPreflightScreenCaptureAccess() == false)
-        if needs {
+        if !requiredPermissionsGranted {
             showOnboarding()
         } else {
             startHotkeyIfNeeded()
@@ -163,7 +180,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Background poll: as soon as both are granted, install the tap.
         permsTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self else { return }
-            if AXIsProcessTrusted() && CGPreflightScreenCaptureAccess() {
+            if self.requiredPermissionsGranted {
                 self.startHotkeyIfNeeded()
                 self.startFocusTrackerIfNeeded()
             }
@@ -192,6 +209,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 cancelAndDismiss()
             }
         }
+    }
+
+    private var requiredPermissionsGranted: Bool {
+        let thumbnailsEnabled = (UserDefaults.standard.object(forKey: SwitchPreferences.showThumbnailsKey) as? Bool) ?? true
+        let screenCaptureOK = !thumbnailsEnabled || CGPreflightScreenCaptureAccess()
+        return AXIsProcessTrusted() && screenCaptureOK
     }
 
     private func schedulePresent(window: SwitcherWindow) {
@@ -343,6 +366,8 @@ private enum SwitcherPanelSize {
         let count = max(itemCount, 1)
         let size: NSSize
         switch (mode, isList) {
+        case (.spaces, _):
+            size = listSize(defaults: defaults, count: count, scale: scale)
         case (.allWindows, true):
             size = NSSize(width: 520 * scale, height: 560 * scale)
         case (.allWindows, false):

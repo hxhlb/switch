@@ -36,20 +36,12 @@ actor WindowSnapshotter {
         inFlight.insert(id)
         defer { inFlight.remove(id) }
 
-        if !force, let img = captureViaCG(id: id) {
+        if let img = captureViaCG(id: id) {
             cache[id] = img
             return img
         }
 
-        // ScreenCaptureKit first — sharper, live-capable for active-Space windows.
-        // onScreenWindowsOnly: false so we still see off-Space window entries here.
         if let img = await captureViaSCK(id: id) {
-            cache[id] = img
-            return img
-        }
-        // Fallback: window-server cache via CGWindowListCreateImage. Works for off-Space /
-        // hidden / minimized windows where ScreenCaptureKit refuses (no live surface).
-        if let img = captureViaCG(id: id) {
             cache[id] = img
             return img
         }

@@ -64,8 +64,10 @@ struct SwitchView: View {
     }
 
     private var showHeader: Bool {
-        !prefs.verticalList || prefs.verticalShowHeader || !model.filterText.isEmpty
+        isSpaceMode || !prefs.verticalList || prefs.verticalShowHeader || !model.filterText.isEmpty
     }
+
+    private var isSpaceMode: Bool { model.mode == .spaces }
 
     private var panelAnimation: Animation {
         prefs.verticalList
@@ -108,7 +110,7 @@ struct SwitchView: View {
             }
             Spacer()
             if !model.filteredWindows.isEmpty {
-                Text("\(model.filteredWindows.count)")
+                Text(isSpaceMode ? "\(model.filteredWindows.count) spaces" : "\(model.filteredWindows.count)")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.tertiary)
                     .monospacedDigit()
@@ -126,7 +128,7 @@ struct SwitchView: View {
             } else {
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: false) {
-                        if prefs.verticalList {
+                        if isSpaceMode || prefs.verticalList {
                             LazyVStack(spacing: 4) {
                                 ForEach(Array(list.enumerated()), id: \.element.id) { idx, w in
                                     listRow(window: w, index: idx)
@@ -181,7 +183,16 @@ struct SwitchView: View {
 
     private var hintStrip: some View {
         Group {
-            if prefs.verticalList {
+            if isSpaceMode {
+                HStack(spacing: 8) {
+                    hint("↵", "switch space")
+                    compactHint("↑↓", "nav")
+                    compactHint("1-9", "pick")
+                    if prefs.typeToFilter { compactHint("type", "filter") }
+                    compactHint("esc", "cancel")
+                    Spacer(minLength: 0)
+                }
+            } else if prefs.verticalList {
                 HStack(spacing: 8) {
                     hint("↵", "switch")
                     compactHint("↑↓", "nav")
@@ -305,7 +316,7 @@ struct SwitchView: View {
             ZStack(alignment: .bottomLeading) {
                 ZStack {
                     Color.black.opacity(0.22)
-                    if let img = model.thumbnails[window.id] {
+                    if prefs.showThumbnails, let img = model.thumbnails[window.id] {
                         Image(nsImage: img)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
@@ -411,16 +422,29 @@ struct SwitchView: View {
                 }
             }
             Spacer(minLength: 6)
-            if prefs.showStoplights && prefs.verticalShowStoplights && !window.isWindowless {
+            if !isSpaceMode && prefs.showStoplights && prefs.verticalShowStoplights && !window.isWindowless {
                 stoplights(for: window)
                     .opacity(hovered ? 1 : 0.45)
             }
-            if !window.isWindowless && (isPinned(window) || hovered) {
+            if !isSpaceMode && !window.isWindowless && (isPinned(window) || hovered) {
                 pinButton(for: window)
                     .opacity(hovered ? 1 : 0.8)
             }
-            windowBadge(for: window)
-            if prefs.verticalShowPreview {
+            if isSpaceMode {
+                if window.spaceLabel == "Current" {
+                    Text("CURRENT")
+                        .font(.system(size: 9, weight: .semibold))
+                        .tracking(0.5)
+                        .foregroundStyle(.white.opacity(0.85))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Capsule())
+                }
+            } else {
+                windowBadge(for: window)
+            }
+            if prefs.showThumbnails && prefs.verticalShowPreview {
                 Group {
                     if let img = model.thumbnails[window.id] {
                         Image(nsImage: img)

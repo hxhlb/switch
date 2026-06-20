@@ -76,6 +76,14 @@ final class SwitchPreferences: ObservableObject {
         didSet { UserDefaults.standard.set(includeWindowlessApps, forKey: SwitchPreferences.includeWindowlessKey) }
     }
 
+    @Published var hideMenuBarIcon: Bool {
+        didSet { UserDefaults.standard.set(hideMenuBarIcon, forKey: SwitchPreferences.hideMenuBarIconKey) }
+    }
+
+    @Published var showThumbnails: Bool {
+        didSet { UserDefaults.standard.set(showThumbnails, forKey: SwitchPreferences.showThumbnailsKey) }
+    }
+
     @Published var showStoplights: Bool {
         didSet { UserDefaults.standard.set(showStoplights, forKey: SwitchPreferences.showStoplightsKey) }
     }
@@ -126,6 +134,8 @@ final class SwitchPreferences: ObservableObject {
     nonisolated static let staticOrderKey = "switch.staticOrder"
     nonisolated static let appOrderKey = "switch.appOrder"
     nonisolated static let includeWindowlessKey = "switch.includeWindowlessApps"
+    nonisolated static let hideMenuBarIconKey = "switch.hideMenuBarIcon"
+    nonisolated static let showThumbnailsKey = "switch.showThumbnails"
     nonisolated static let showStoplightsKey = "switch.showStoplights"
     nonisolated static let verticalShowStoplightsKey = "switch.verticalShowStoplights"
     nonisolated static let verticalShowPreviewKey = "switch.verticalShowPreview"
@@ -148,6 +158,8 @@ final class SwitchPreferences: ObservableObject {
         staticOrder = UserDefaults.standard.bool(forKey: SwitchPreferences.staticOrderKey)
         appOrder = UserDefaults.standard.stringArray(forKey: SwitchPreferences.appOrderKey) ?? []
         includeWindowlessApps = UserDefaults.standard.bool(forKey: SwitchPreferences.includeWindowlessKey)
+        hideMenuBarIcon = UserDefaults.standard.bool(forKey: SwitchPreferences.hideMenuBarIconKey)
+        showThumbnails = (UserDefaults.standard.object(forKey: SwitchPreferences.showThumbnailsKey) as? Bool) ?? true
         showStoplights = (UserDefaults.standard.object(forKey: SwitchPreferences.showStoplightsKey) as? Bool) ?? true
         verticalShowStoplights = (UserDefaults.standard.object(forKey: SwitchPreferences.verticalShowStoplightsKey) as? Bool) ?? true
         verticalShowPreview = (UserDefaults.standard.object(forKey: SwitchPreferences.verticalShowPreviewKey) as? Bool) ?? true

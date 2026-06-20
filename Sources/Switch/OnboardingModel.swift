@@ -10,7 +10,8 @@ final class OnboardingModel: ObservableObject {
 
     private var timer: Timer?
 
-    var allGranted: Bool { accessibility && screenCapture }
+    var requiresScreenCapture: Bool { SwitchPreferences.shared.showThumbnails }
+    var allGranted: Bool { accessibility && (!requiresScreenCapture || screenCapture) }
 
     func startPolling() {
         refresh()

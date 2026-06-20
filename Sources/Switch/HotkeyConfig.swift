@@ -21,6 +21,11 @@ struct HotkeyBinding: Codable, Equatable {
         modifiersRaw: CGEventFlags.maskAlternate.rawValue
     )
 
+    static let defaultSpaces = HotkeyBinding(
+        keyCode: 48, // Tab
+        modifiersRaw: CGEventFlags.maskControl.rawValue
+    )
+
     /// Whether `flags` contain exactly the required modifiers (ignoring shift, which is used for reverse).
     func modifiersHeld(_ flags: CGEventFlags) -> Bool {
         let needed = cgFlags
@@ -57,6 +62,7 @@ final class HotkeyConfig {
     private let defaults = UserDefaults.standard
     private let allKey = "switch.hotkey.allWindows"
     private let appKey = "switch.hotkey.currentApp"
+    private let spacesKey = "switch.hotkey.spaces"
     private let stickyKey = "switch.hotkey.stickyToggle"
 
     static let didChangeNotification = Notification.Name("com.sanyamgarg.switch.hotkeyConfigDidChange")
@@ -71,6 +77,11 @@ final class HotkeyConfig {
     var currentApp: HotkeyBinding {
         get { load(appKey) ?? .defaultCurrentApp }
         set { save(newValue, key: appKey) }
+    }
+
+    var spaces: HotkeyBinding {
+        get { load(spacesKey) ?? .defaultSpaces }
+        set { save(newValue, key: spacesKey) }
     }
 
     var stickyToggle: HotkeyBinding? {
@@ -88,6 +99,7 @@ final class HotkeyConfig {
     func resetToDefaults() {
         defaults.removeObject(forKey: allKey)
         defaults.removeObject(forKey: appKey)
+        defaults.removeObject(forKey: spacesKey)
         defaults.removeObject(forKey: stickyKey)
         NotificationCenter.default.post(name: Self.didChangeNotification, object: nil)
     }

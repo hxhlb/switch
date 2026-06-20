@@ -3,7 +3,7 @@ import ApplicationServices
 import CoreGraphics
 
 final class HotkeyManager {
-    enum Mode { case allWindows, currentApp }
+    enum Mode { case allWindows, currentApp, spaces }
     enum Direction { case left, right, up, down }
 
     var onArm: ((Mode) -> Void)?
@@ -151,6 +151,7 @@ final class HotkeyManager {
         if type == .keyDown {
             let allBinding = HotkeyConfig.shared.allWindows
             let appBinding = HotkeyConfig.shared.currentApp
+            let spacesBinding = HotkeyConfig.shared.spaces
 
             if let stickyBinding = HotkeyConfig.shared.stickyToggle,
                stickyBinding.matchesTrigger(keyCode: kc, flags: flags) {
@@ -164,6 +165,14 @@ final class HotkeyManager {
                 DispatchQueue.main.async { [weak self] in
                     guard let self else { return }
                     if armed == nil { armed = .allWindows; armedAt = Date(); advanced = false; onArm?(.allWindows) }
+                    else { advanced = true; onAdvance?(shift) }
+                }
+                return nil
+            }
+            if spacesBinding.matchesTrigger(keyCode: kc, flags: flags) {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    if armed == nil { armed = .spaces; armedAt = Date(); advanced = false; onArm?(.spaces) }
                     else { advanced = true; onAdvance?(shift) }
                 }
                 return nil
@@ -261,6 +270,13 @@ final class HotkeyManager {
                     }
                 }
             } else if armed == .currentApp && !HotkeyConfig.shared.currentApp.modifiersHeld(flags) {
+                if !sticky || quickTap {
+                    DispatchQueue.main.async { [weak self] in
+                        self?.armed = nil
+                        self?.onCommit?()
+                    }
+                }
+            } else if armed == .spaces && !HotkeyConfig.shared.spaces.modifiersHeld(flags) {
                 if !sticky || quickTap {
                     DispatchQueue.main.async { [weak self] in
                         self?.armed = nil
